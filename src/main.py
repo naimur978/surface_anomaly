@@ -22,14 +22,14 @@ from torchvision import transforms
 from tqdm import tqdm
 import random
 
-from models import FeatureExtractor, PatchCore
-from metrics import (
+from .models import FeatureExtractor, PatchCore
+from .metrics import (
     compute_metrics, find_threshold_for_recall, compute_confusion_metrics,
     save_metrics, plot_confusion_matrix
 )
-from visualization import plot_evaluation
-from check_device import get_device
-import utils_data
+from .visualization import plot_evaluation
+from .check_device import get_device
+from . import utils_data
 
 warnings.filterwarnings('ignore')
 

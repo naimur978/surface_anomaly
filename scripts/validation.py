@@ -9,9 +9,9 @@ import sys
 import os
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from utils_data import print_dataset_stats, verify_dataset_integrity
+from src.utils_data import print_dataset_stats, verify_dataset_integrity
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

@@ -7,6 +7,29 @@ import torch
 import os
 
 
+def get_device(logger=None):
+    """
+    Auto-select best available device with priority:
+    1. CUDA (NVIDIA GPU)
+    2. MPS (MacBook Metal GPU)
+    3. CPU (fallback)
+    """
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        if logger:
+            logger.info("Using CUDA (NVIDIA GPU)")
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        if logger:
+            logger.info("Using Metal Performance Shaders (MacBook GPU)")
+    else:
+        device = torch.device("cpu")
+        if logger:
+            logger.info("Using CPU")
+
+    return device
+
+
 def check_devices():
     """Check and display available compute devices"""
     print("\n" + "="*60)
