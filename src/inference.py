@@ -90,7 +90,7 @@ class AnomalyDetector:
 
         # Use MVTecDataset transform (suppress dataset info printing)
         import logging
-        logging.getLogger('patchcore_anomaly_detection').setLevel(logging.WARNING)
+        logging.getLogger('surface_anomaly_detection').setLevel(logging.WARNING)
 
         root_dir = self.config.get('data', {}).get('root_dir', './data')
         if not root_dir.startswith('/'):
@@ -103,7 +103,7 @@ class AnomalyDetector:
             crop_size=self.config.get('image', {}).get('crop_size', 224)
         )
 
-        logging.getLogger('patchcore_anomaly_detection').setLevel(logging.INFO)
+        logging.getLogger('surface_anomaly_detection').setLevel(logging.INFO)
 
         img_t = dataset.transform(img)
         img_batch = img_t.unsqueeze(0)
@@ -258,7 +258,7 @@ def main():
 
     # Initialize MLflow
     setup_mlflow(experiment_name='surface-anomaly-detection')
-    run = start_run(run_name='patchcore_inference')
+    run = start_run(run_name='surface_anomaly_inference')
     logger.info(f"MLflow run started: {run.info.run_id}")
 
     # Load config

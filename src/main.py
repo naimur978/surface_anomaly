@@ -40,7 +40,7 @@ def main(config_path="config.yaml"):
 
     # Initialize MLflow
     setup_mlflow(experiment_name='surface-anomaly-detection')
-    run = start_run(run_name='patchcore_training')
+    run = start_run(run_name='surface_anomaly_training')
     logger.info(f"MLflow run started: {run.info.run_id}")
 
     device = get_device(logger=logger)

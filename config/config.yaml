@@ -65,4 +65,4 @@ figures:
 logging:
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file: "./results/logs/patchcore.log"
+  file: "./results/logs/surface_anomaly.log"

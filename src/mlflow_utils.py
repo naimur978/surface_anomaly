@@ -64,7 +64,7 @@ def log_training_metrics(metrics):
     })
 
 
-def log_model(model_path, model_name='patchcore'):
+def log_model(model_path, model_name='surface_anomaly'):
     """Log trained model to MLflow.
 
     Args:
