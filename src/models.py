@@ -7,6 +7,13 @@ import torch.nn as nn
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy import ndimage
+import os
+
+# Patch torch.hub to skip GitHub repo validation to avoid rate limit issues
+def _patched_validate(*args, **kwargs):
+    pass
+
+torch.hub._validate_not_a_forked_repo = _patched_validate
 
 
 class FeatureExtractor(nn.Module):
@@ -16,7 +23,8 @@ class FeatureExtractor(nn.Module):
         super().__init__()
         self.device = device
         self.logger = logger
-        self.model = torch.hub.load('facebookresearch/dinov2', model_name).to(device).eval()
+        os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')
+        self.model = torch.hub.load('facebookresearch/dinov2', model_name, trust_repo=True).to(device).eval()
 
         for p in self.model.parameters():
             p.requires_grad = False

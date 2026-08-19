@@ -30,9 +30,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Python packages from builder
 COPY --from=builder /root/.local /root/.local
 
-# Set PATH
+# Set PATH and environment
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
+ENV TORCH_HOME=/root/.cache/torch
 
 # Copy application code
 COPY src/ ./src/
@@ -41,6 +42,9 @@ COPY config/ ./config/
 
 # Create directories for data and results
 RUN mkdir -p data results/models results/figures results/inference_latest
+
+# Pre-download DINOv2 model to avoid GitHub rate limit during runtime
+RUN python -c "import torch; torch.hub.load('facebookresearch/dinov2', 'dinov2_vitb14', trust_repo=True)" 2>/dev/null || echo "Model download skipped or cached"
 
 # Default command (no ENTRYPOINT, let CMD handle everything)
 CMD ["python", "scripts/train.py", "config/config.yaml"]
