@@ -356,14 +356,13 @@ def main() -> None:
                 if expected and expected != predicted:
                     mismatches.append((idx, result, expected, predicted))
 
-            # Put all false positives with heatmaps to compare
+            # Generate visualizations for all mismatches
             if mismatches:
                 logger.info(f"\nGenerating heatmap visualizations for {len(mismatches)} mismatched predictions...")
                 mismatches_dir = output_dir / "mismatches"
                 mismatches_dir.mkdir(exist_ok=True)
 
                 for idx, result, expected, predicted in mismatches:
-                    # Put all false positives with heatmaps to compare
                     mismatch_subdir = mismatches_dir / "false_positives"
                     mismatch_subdir.mkdir(exist_ok=True)
 

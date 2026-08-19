@@ -80,7 +80,7 @@ results/
 ├── inference_latest/
 │   ├── predictions.json                                   # Per-image scores and labels
 │   ├── mismatches/
-│   │   └── false_positives/                              # False positive heatmaps
+│   │   └── false_positives/                              # Put all false positives with heatmaps to compare
 │   └── inference.log                                      # Inference log
 └── logs/
     └── surface_anomaly.log                                # Training log
