@@ -73,6 +73,19 @@ results/
 ```
 
 **MLflow Tracking:**
-Open `http://localhost:5000` to view experiment metrics, parameters, and timing benchmarks. 
+Open `http://localhost:5000` to view experiment metrics, parameters, and timing benchmarks.
 
+## My Plan
+
+## MLflow
+
+## GitFlow
+
+## Docker
+
+## Code Setup Plan
+
+## References
+
+Baseline model comparison can be found in `baseline_model.ipynb`. For a quick overview of the project, see the summarized notebook at `notebook.ipynb`.
 
