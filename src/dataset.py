@@ -1,5 +1,5 @@
 """
-MVTec dataset loader with preprocessing.
+MVTec dataset loader with preprocessing and ROI masking.
 """
 
 from pathlib import Path
@@ -7,23 +7,71 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image
+import numpy as np
 
 
 class MVTecDataset(Dataset):
-    """MVTec dataset loader with preprocessing and augmentation."""
+    """MVTec dataset loader with preprocessing, ROI masking, and augmentation."""
 
     IMAGENET_MEAN = [0.485, 0.456, 0.406]
     IMAGENET_STD = [0.229, 0.224, 0.225]
 
-    def __init__(self, root, category, split="train", crop_size=224):
+    def __init__(self, root, category, split="train", crop_size=224, apply_roi_mask=False):
         root = Path(root).resolve()  # Convert to absolute path
         self.root = root / category / split
         self.mask_root = root / category / "ground_truth"
+        self.category = category
         self.split = split
+        self.apply_roi_mask = apply_roi_mask
+
+        # Load ROI masks if enabled
+        self.roi_masks = {}
+        if self.apply_roi_mask:
+            self.roi_masks = self._load_roi_masks(root)
+
         self.transform = self._build_transform(crop_size, normalize=True)
         self.mask_transform = self._build_transform(crop_size, normalize=False)
         self.samples = self._build_samples()
         self._print_summary(category)
+
+    def _load_roi_masks(self, root):
+        """Load ROI masks from parent data folder (mask.png for each feature)."""
+        roi_masks = {}
+        parent = root.parent.parent  # Go up to find data root with features
+
+        # Look for mask.png files in Feature 1, Feature 2, etc.
+        for feature_dir in parent.glob("Feature *"):
+            if feature_dir.is_dir():
+                mask_path = feature_dir / "mask.png"
+                if mask_path.exists():
+                    mask_img = Image.open(mask_path).convert("L")
+                    mask_array = np.array(mask_img) > 127  # Binary mask (True = ROI)
+                    feature_name = feature_dir.name.replace(" ", "").lower()  # "Feature 1" -> "feature1"
+                    roi_masks[feature_name] = mask_array
+
+        return roi_masks
+
+    def _apply_roi_mask(self, img):
+        """Apply ROI mask to image (black out non-ROI regions)."""
+        if not self.apply_roi_mask or not self.roi_masks:
+            return img
+
+        # Determine which feature this image belongs to (feature1 or feature2)
+        img_array = np.array(img)
+
+        # Try to find matching ROI mask
+        for feature_prefix, mask in self.roi_masks.items():
+            # Resize mask to match image size
+            mask_img = Image.fromarray((mask * 255).astype(np.uint8))
+            mask_img = mask_img.resize(img.size, Image.Resampling.NEAREST)
+            mask_array = np.array(mask_img) > 127
+
+            # Apply mask: set non-ROI pixels to 0 (black)
+            img_array[~mask_array] = 0
+
+            return Image.fromarray(img_array)
+
+        return img
 
     def _pad_to_square(self, img, pad_color=0):
         """Pad image to square."""
@@ -36,6 +84,7 @@ class MVTecDataset(Dataset):
     def _build_transform(self, crop_size, normalize):
         """Build image transformation pipeline."""
         ops = [
+            transforms.Lambda(lambda img: self._apply_roi_mask(img) if self.apply_roi_mask else img),
             transforms.Lambda(lambda img: self._pad_to_square(img, 0)),
             transforms.Resize((crop_size, crop_size)),
             transforms.ToTensor(),
@@ -65,7 +114,8 @@ class MVTecDataset(Dataset):
         """Print dataset summary."""
         n_normal = sum(1 for _, _, l in self.samples if l == 0)
         n_defect = sum(1 for _, _, l in self.samples if l == 1)
-        print(f"Dataset '{self.split}' [{category}]: {n_normal} normal | {n_defect} defective")
+        roi_status = "✓ ROI masking enabled" if self.apply_roi_mask else "✗ No ROI masking"
+        print(f"Dataset '{self.split}' [{category}]: {n_normal} normal | {n_defect} defective | {roi_status}")
 
     def __len__(self):
         return len(self.samples)

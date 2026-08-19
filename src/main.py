@@ -54,13 +54,15 @@ def main(config_path="config.yaml"):
         config['data']['root_dir'],
         config['data']['category'],
         split='train',
-        crop_size=config['image']['crop_size']
+        crop_size=config['image']['crop_size'],
+        apply_roi_mask=config['image'].get('apply_roi_mask', False)
     )
     val_dataset = MVTecDataset(
         config['data']['root_dir'],
         config['data']['category'],
         split='test',
-        crop_size=config['image']['crop_size']
+        crop_size=config['image']['crop_size'],
+        apply_roi_mask=config['image'].get('apply_roi_mask', False)
     )
 
     train_loader = DataLoader(
