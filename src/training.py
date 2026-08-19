@@ -147,7 +147,7 @@ def save_results(model, metrics, val_scores, val_labels, val_score_maps, val_dat
 
     # Save model with backbone name to keep separate trained models
     feature_extractor = config['model'].get('feature_extractor', 'dinov2_vitb14')
-    model_name = f"patchcore_{config['data']['category']}_{feature_extractor}.pkl"
+    model_name = f"anomaly_localization_{config['data']['category']}_{feature_extractor}.pkl"
     model_path = Path(output_config['models_dir']) / model_name
     with open(model_path, 'wb') as f:
         pickle.dump(model, f)

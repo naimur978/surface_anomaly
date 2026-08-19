@@ -163,7 +163,7 @@ def main():
     # Get feature extractor config
     model_name = config['model'].get('feature_extractor', 'dinov2_vitb14')
     model_path = (
-        f"results/models/patchcore_surface_{model_name}.pkl"
+        f"results/models/anomaly_localization_surface_{model_name}.pkl"
     )
 
     if not Path(model_path).exists():

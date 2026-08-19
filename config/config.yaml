@@ -25,8 +25,8 @@ model:
   # DINOv2: 16x16 patches (256 per image), 768-dim features
   # EfficientNet: 28x28 patches (784 per image), 2224-dim features
   feature_extractor: "dinov2_vitb14"
-  coreset_ratio: 0.05                   # Coreset sampling ratio
-  n_neighbors: 5                        # Number of neighbors for KNN
+  coreset_ratio: 0.15                   # Coreset sampling ratio
+  n_neighbors: 9                        # Number of neighbors for KNN
   device: "mps"                        # Device: cuda, mps (MacBook), or cpu
 
 # Training Configuration

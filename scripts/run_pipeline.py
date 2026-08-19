@@ -34,7 +34,7 @@ def get_model_path(config_file):
         config = yaml.safe_load(f)
 
     feature_extractor = config['model'].get('feature_extractor', 'dinov2_vitb14')
-    model_name = f"patchcore_surface_{feature_extractor}.pkl"
+    model_name = f"anomaly_localization_surface_{feature_extractor}.pkl"
     return f"results/models/{model_name}"
 
 
