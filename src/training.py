@@ -141,8 +141,10 @@ def save_results(model, metrics, val_scores, val_labels, output_config, config, 
     """Save model, metrics, and visualizations."""
     logger.info(f"\nSaving outputs...")
 
-    # Save model
-    model_path = Path(output_config['models_dir']) / f"patchcore_{config['data']['category']}.pkl"
+    # Save model with backbone name to keep separate trained models
+    feature_extractor = config['model'].get('feature_extractor', 'dinov2_vitb14')
+    model_name = f"patchcore_{config['data']['category']}_{feature_extractor}.pkl"
+    model_path = Path(output_config['models_dir']) / model_name
     with open(model_path, 'wb') as f:
         pickle.dump(model, f)
     logger.info(f"  Model: {model_path}")

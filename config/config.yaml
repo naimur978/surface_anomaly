@@ -20,10 +20,13 @@ image:
 # Model Configuration
 model:
   # Feature extraction backbone: "dinov2_vitb14" or "efficientnet_b4"
+  # Note: Each backbone has its own trained model saved separately
+  # DINOv2: 16x16 patches (256 per image), 768-dim features
+  # EfficientNet: 28x28 patches (784 per image), 2224-dim features
   feature_extractor: "efficientnet_b4"
   coreset_ratio: 0.15                   # Coreset sampling ratio
   n_neighbors: 9                        # Number of neighbors for KNN
-  device: "cuda"                        # Device: cuda, mps (MacBook), or cpu
+  device: "mps"                        # Device: cuda, mps (MacBook), or cpu
 
 # Training Configuration
 training:

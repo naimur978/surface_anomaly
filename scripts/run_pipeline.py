@@ -8,6 +8,7 @@ Automatically starts MLflow UI in background.
 import subprocess
 import sys
 import os
+import yaml
 from pathlib import Path
 
 
@@ -27,6 +28,16 @@ def run_command(cmd, description):
         return False
 
 
+def get_model_path(config_file):
+    """Get the correct model path based on current backbone in config."""
+    with open(config_file, 'r') as f:
+        config = yaml.safe_load(f)
+
+    feature_extractor = config['model'].get('feature_extractor', 'dinov2_vitb14')
+    model_name = f"patchcore_surface_{feature_extractor}.pkl"
+    return f"results/models/{model_name}"
+
+
 def main():
     """Run the complete pipeline."""
     # Allow file store for MLflow (disable maintenance mode warning)
@@ -42,6 +53,12 @@ def main():
     if not Path(config_file).exists():
         print(f"Error: Config file not found: {config_file}")
         sys.exit(1)
+
+    # Load config to get backbone
+    with open(config_file, 'r') as f:
+        config = yaml.safe_load(f)
+    feature_extractor = config['model'].get('feature_extractor', 'dinov2_vitb14')
+    print(f"\n🔧 Using backbone: {feature_extractor}")
 
     # Step 0: Validate data
     if Path("data/surface/test").exists():
@@ -60,10 +77,14 @@ def main():
         print("✗ Training failed. Pipeline stopped.")
         sys.exit(1)
 
+    # Get correct model path based on backbone
+    model_path = get_model_path(config_file)
+
     # Step 2: Inference
     if not run_command(
-        "python scripts/inference.py "
-        "--model results/models/patchcore_surface.pkl "
+        f"python scripts/inference.py "
+        f"--model {model_path} "
+        f"--config {config_file} "
         "--folder data/surface/test "
         "--output ./results/inference_latest "
         "--visualize",
