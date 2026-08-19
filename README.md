@@ -1,22 +1,53 @@
-2 lines of summary about the project 
+# Surface Anomaly Localization
 
-installation
+Detects and localizes surface defects using DINOv2/EfficientNet feature extractors with k-NN anomaly scoring. This documentation briefly explains the methods and rationale used in the implementation.
 
-usage
+## Installation
 
-expected output
+Clone the repository and install dependencies:
 
-my plan
+```bash
+git clone https://github.com/naimur978/surface_anomaly.git
+cd surface_anomaly
+pip install -r requirements.txt
+```
 
-mlflow
+## Usage
 
-gitflow
+Run the complete pipeline (data validation → training → inference):
 
-docker
+```bash
+# Start MLflow UI (optional, for experiment tracking)
+python scripts/mlflow_ui.py
 
-code setup plan
+# Run pipeline in another terminal
+python scripts/run_pipeline.py config/config.yaml
+```
 
-refer i did base line comparison in notebook. which you can find under baseline_model.ipynb
-also, if you just want to skin through the project, i made a summarized version of notebook that you can find in notebook.ipynb. 
+**Note:** While Docker support is available, we recommend running with Python scripts directly. Docker containerization has limitations with MPS (MacBook GPU), so the container runs on CPU only. For best performance, use native Python execution which supports CUDA/MPS/CPU acceleration.
 
+## Expected Output
 
+The pipeline generates:
+
+```
+results/
+├── models/
+│   └── anomaly_localization_surface_dinov2_vitb14.pkl    # Trained model
+├── metrics.json                                            # AUROC, F1, threshold
+├── figures/
+│   ├── confusion_matrix.png                               # Confusion matrix
+│   ├── evaluation.png                                      # ROC curve + score distribution
+│   ├── random_heatmaps.png                                # Sample predictions with heatmaps
+│   └── preprocessing_pipeline.png                         # Data preprocessing steps
+├── inference_latest/
+│   ├── predictions.json                                   # Per-image scores and labels
+│   ├── mismatches/
+│   │   └── false_positives/                              # False positive heatmaps
+│   └── inference.log                                      # Inference log
+└── logs/
+    └── surface_anomaly.log                                # Training log
+```
+
+**MLflow Tracking:**
+Open `http://localhost:5000` to view experiment metrics, parameters, and timing benchmarks.
