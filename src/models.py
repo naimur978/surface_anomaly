@@ -47,17 +47,29 @@ class FeatureExtractor(nn.Module):
     def _init_efficientnet(self, device, logger):
         """Initialize EfficientNet B4 feature extractor."""
         from torchvision.models import efficientnet_b4, EfficientNet_B4_Weights
-        self.model = efficientnet_b4(weights=EfficientNet_B4_Weights.IMAGENET1K_V1).to(device).eval()
+        from torchvision.models.feature_extraction import create_feature_extractor
 
-        # Remove the final classification layer
-        self.model.classifier = nn.Identity()
+        backbone = efficientnet_b4(weights=EfficientNet_B4_Weights.IMAGENET1K_V1)
+
+        # Extract intermediate layers (layer2 and layer3)
+        self.model = create_feature_extractor(
+            backbone,
+            return_nodes={
+                "features.4": "layer2",   # 40x40 spatial resolution
+                "features.6": "layer3",   # 20x20 spatial resolution
+            },
+        )
+        self.model = self.model.to(device).eval()
 
         for p in self.model.parameters():
             p.requires_grad = False
 
-        self.feature_dim = 1792  # EfficientNet B4 output dim
-        self.patch_size = 16  # Approximate patch size for EfficientNet
+        # For 224x224 input: layer2 is 28x28, layer3 is 14x14
+        # After concatenation: 14x14 spatial, 688+1536=2224 channels
+        self.feature_dim = 2224  # layer2 + layer3 concatenated
+        self.patch_size = 16  # 224 / 14 = 16
         self.backbone_type = 'efficientnet'
+        self.neighbourhood_size = 3
 
         if logger:
             logger.info("EfficientNet B4 loaded successfully")
@@ -72,11 +84,29 @@ class FeatureExtractor(nn.Module):
         if self.backbone_type == 'dinov2':
             tokens = self.model.forward_features(imgs)['x_norm_patchtokens']
         else:  # efficientnet
-            # Forward through EfficientNet to get features
-            features = self.model.features(imgs)  # (B, 1792, h, w)
-            B, C, h, w = features.shape
-            # Reshape to patch format: (B, h*w, C)
-            tokens = features.permute(0, 2, 3, 1).reshape(B, h * w, C)
+            # Forward through EfficientNet to get layer2 and layer3 features
+            feats = self.model(imgs)
+            f2 = feats["layer2"]  # (B, 688, 28, 28)
+            f3 = feats["layer3"]  # (B, 1536, 14, 14)
+
+            # Apply neighbourhood pooling to layer2
+            if self.neighbourhood_size > 1:
+                f2 = torch.nn.functional.avg_pool2d(
+                    f2, kernel_size=self.neighbourhood_size, stride=1,
+                    padding=self.neighbourhood_size // 2
+                )
+
+            # Upsample layer3 to match layer2 spatial dimensions
+            f3_up = torch.nn.functional.interpolate(
+                f3, size=f2.shape[-2:], mode="bilinear", align_corners=False
+            )
+
+            # Concatenate layer2 and upsampled layer3
+            combined = torch.cat([f2, f3_up], dim=1)  # (B, 2224, 28, 28)
+
+            # Reshape to patch format: (B, H*W, C)
+            B, C, h, w = combined.shape
+            tokens = combined.permute(0, 2, 3, 1).reshape(B, h * w, C)
 
         return tokens.cpu(), (gh, gw)
 
