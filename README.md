@@ -4,6 +4,23 @@ This work is about detecting and localizing surface defects using DINOv2/Efficie
 
 **Quick Overview:** If you don't wanna go through all the scripts, I have made a brief notebook at `notebook.ipynb`. You can see my work at a glance in the notebook.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Expected Output](#expected-output)
+- [My Plan](#my-plan)
+  - [CI/CD Pipeline](#cicd-pipeline)
+  - [Baseline Model Comparison](#baseline-model-comparison)
+- [Problem Interpretation](#problem-interpretation)
+- [Methodology](#methodology)
+- [Key Design Decisions](#key-design-decisions)
+- [Assumptions](#assumptions)
+- [Evaluation Metrics](#evaluation-metrics)
+- [Limitations](#limitations)
+- [Potential Room for Improvements](#potential-room-for-improvements)
+- [References](#references)
+
 ## Installation
 
 1. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
@@ -129,11 +146,79 @@ Here are the results I got:
 
 PatchCore seemed better, but that doesn't mean it will be better in the end. However, I took a leap of faith and decided to focus on improving PatchCore. My intention was to keep the ROC AUC above 0.98 to ensure it reliably separates defects from non-defects in production.
 
-## MLflow
+## Problem Interpretation
 
-## GitFlow
+**Objective:** Detect and localize surface defects on manufactured items using unsupervised anomaly detection.
 
-## Docker
+**Challenge:** Unlike supervised learning, we have limited or no labeled defect examples during training. The model must learn what "normal" looks like and flag deviations as anomalies. Additionally, we need **localization** (pixel-level heatmaps) not just classification (image-level scores).
+
+**Real-world Context:** In manufacturing QA, false negatives (missing defects) are costly, while false positives (flagging good items) waste inspection resources. The goal is to maximize detection while minimizing false alarms.
+
+## Methodology
+
+**Approach:** Patch-based anomaly detection using pre-trained feature extractors (DINOv2/EfficientNet) with k-NN scoring.
+
+1. **Feature Extraction** - Extract deep features from image patches using a pre-trained vision model
+2. **Coreset Selection** - Subsample representative training patches to reduce memory/compute (coreset ratio: 0.1)
+3. **k-NN Scoring** - For each patch, compute anomaly score as distance to k-nearest neighbors in feature space
+4. **Image-level Aggregation** - Combine patch scores to get image-level anomaly score
+5. **Threshold Selection** - Use 100% recall threshold to catch all defects, accepting some false positives
+
+## Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **DINOv2 backbone** | Vision Transformer features capture fine-grained structural patterns better than CNNs for surface anomalies |
+| **k=9 neighbors** | Balances local context (small k too noisy) vs. generalization (large k loses sensitivity) |
+| **Coreset ratio 0.1** | Reduces training patches from millions to ~100K while preserving patch diversity |
+| **ROI masking** | Focuses on relevant surface area, ignoring background/borders that vary across images |
+| **100% recall threshold** | Prioritizes catching defects; false positives filtered by human reviewers |
+| **Patch overlap** | Sliding window with stride ensures complete coverage for smooth heatmaps |
+
+## Assumptions
+
+1. **Normal training samples are representative** - Training set contains diverse normal variations (lighting, angles, surface texture)
+2. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
+3. **Feature extractor generalizes** - Pre-trained DINOv2 transfers well without fine-tuning
+4. **Threshold is stable** - 100% recall on validation generalizes to test set
+5. **No label noise** - Training data correctly labeled as normal (critical for unsupervised methods)
+
+## Evaluation Metrics
+
+| Metric | Purpose | Target |
+|--------|---------|--------|
+| **AUROC (Image)** | Discrimination ability across all thresholds | > 0.98 |
+| **AUROC (Pixel)** | Localization accuracy (per-pixel predictions) | > 0.90 |
+| **F1 Score** | Balanced precision-recall at chosen threshold | > 0.85 |
+| **F2 Score** | Recall-weighted (catch defects > precision) | > 0.80 |
+| **Confusion Matrix** | TP/FP/TN/FN breakdown for business analysis | Low FN rate |
+
+## Limitations
+
+1. **Limited training diversity** - Model trained on 1-2 surface types; may not generalize to new defect patterns
+2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity; rare/subtle defects may be missed
+3. **Computational cost** - Feature extraction + k-NN search slow for high-resolution images at inference time
+4. **Hyperparameter sensitivity** - Coreset ratio and k-neighbors require tuning per dataset
+5. **No temporal context** - Treats images independently; sequence anomalies (degradation trends) not captured
+6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
+
+## Potential Room for Improvements
+
+### Short-term
+- **Adaptive thresholding** - Learn per-image or per-defect-type thresholds instead of global threshold
+- **Ensemble methods** - Combine multiple backbones (DINOv2 + EfficientNet) for robustness
+- **Hard negative mining** - Focus training on borderline false positives to tighten decision boundary
+
+### Medium-term
+- **Fine-tuning** - Adapt pre-trained features with contrastive learning on domain-specific data
+- **Hierarchical k-NN** - Multi-scale patch analysis (local + global context) for better localization
+- **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
+
+### Long-term
+- **One-class classifiers** - Replace k-NN with learned decision boundary (e.g., Support Vector Data Description)
+- **Generative models** - Reconstruct normal images; anomaly = reconstruction error (GANomaly approach)
+- **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
+- **Active learning** - Iteratively select hard examples for human labeling to improve model
 
 ## Code Setup Plan
 
