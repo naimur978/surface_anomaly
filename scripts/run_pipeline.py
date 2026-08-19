@@ -15,17 +15,15 @@ from pathlib import Path
 
 def run_command(cmd, description):
     """Run a shell command and handle errors."""
-    print("\n" + "="*70)
-    print(f"{description}")
-    print("="*70 + "\n")
+    print(f"\n{description}...")
 
     try:
         # Run with output streamed to console
-        result = subprocess.run(cmd, shell=True, check=True)
-        print(f"\n✓ {description} completed successfully\n")
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=False)
+        print(f"✓ {description} completed\n")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"\n✗ {description} failed with exit code {e.returncode}\n")
+        print(f"✗ {description} failed with exit code {e.returncode}\n")
         return False
 
 
@@ -46,25 +44,20 @@ def main():
         sys.exit(1)
 
     # Step 0: Validate data
-    print("\n" + "="*70)
-    print("STEP 0: Validating Dataset")
-    print("="*70 + "\n")
-
     if Path("data/surface/test").exists():
         run_command(
             "python scripts/validation.py ./data surface",
-            "Data Validation"
+            "Validating dataset"
         )
-        print("Data validation completed (warnings allowed)\n")
     else:
         print("⚠ Data directory not found, skipping validation\n")
 
     # Step 1: Training
     if not run_command(
         f"python scripts/train.py {config_file}",
-        "STEP 1: Training Model"
+        "Training model"
     ):
-        print("Training failed. Pipeline stopped.")
+        print("✗ Training failed. Pipeline stopped.")
         sys.exit(1)
 
     # Step 2: Inference
@@ -74,35 +67,29 @@ def main():
         "--folder data/surface/test "
         "--output ./results/inference_latest "
         "--visualize",
-        "STEP 2: Running Inference"
+        "Running inference"
     ):
-        print("Inference failed. Pipeline stopped.")
+        print("✗ Inference failed. Pipeline stopped.")
         sys.exit(1)
 
     # Step 3: Generate and log threshold comparison
-    print("\nSTEP 3: Generating Threshold Comparison")
-    print("="*70)
     run_command(
         "python scripts/mlflow_comparison.py",
-        "Threshold Comparison"
+        "Generating threshold comparison"
     )
 
     # Step 4: Summary
     print("\n" + "="*70)
-    print("PIPELINE COMPLETED SUCCESSFULLY!")
+    print("✓ PIPELINE COMPLETED SUCCESSFULLY")
     print("="*70)
-    print("\nResults saved to:")
-    print("  - Model: results/models/patchcore_surface.pkl")
-    print("  - Metrics: results/metrics.json")
-    print("  - Inference: results/inference_latest/")
-    print("  - Comparison: results/figures/confusion_matrices_comparison.png")
-    print("\nMLflow Logged:")
-    print("  - Training metrics (AUROC, F1, etc)")
-    print("  - Inference metrics (accuracy, precision, recall)")
-    print("  - Threshold comparison image")
-    print("\nView all results in MLflow:")
+    print("\nResults:")
+    print("  📁 Model:      results/models/patchcore_surface.pkl")
+    print("  📊 Metrics:    results/metrics.json")
+    print("  📈 Inference:  results/inference_latest/")
+    print("  🔄 Comparison: results/figures/confusion_matrices_comparison.png")
+    print("\nMLflow tracking:")
     print("  bash scripts/start_mlflow.sh")
-    print("  Then open http://localhost:5000 in your browser")
+    print("  then open http://localhost:5000")
     print("="*70 + "\n")
 
 
