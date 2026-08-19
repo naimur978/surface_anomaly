@@ -23,9 +23,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import torch
 
-from patchcore_anomaly_detection import (
-    FeatureExtractor, MVTecDataset, setup_logging, get_device
-)
+from models import FeatureExtractor
+from patchcore_anomaly_detection import MVTecDataset, setup_logging
+from check_device import get_device
 
 logger = logging.getLogger(__name__)
 
