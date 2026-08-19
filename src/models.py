@@ -5,8 +5,8 @@ PatchCore model components (Feature Extractor and PatchCore scoring).
 import torch
 import torch.nn as nn
 import numpy as np
-import cv2
 from scipy.ndimage import gaussian_filter
+from scipy import ndimage
 
 
 class FeatureExtractor(nn.Module):
@@ -95,5 +95,7 @@ class PatchCore:
         """Generate pixel-level anomaly map."""
         H, W = self.hw_shape
         scores = self._compute_patch_scores(patch_features).reshape(H, W)
-        scores_up = cv2.resize(scores, (224, 224), interpolation=cv2.INTER_LINEAR)
+        # Resize using scipy zoom
+        zoom_factors = (224 / H, 224 / W)
+        scores_up = ndimage.zoom(scores, zoom_factors, order=1)
         return gaussian_filter(scores_up, sigma=4)
