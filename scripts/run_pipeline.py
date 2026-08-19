@@ -79,7 +79,15 @@ def main():
         print("Inference failed. Pipeline stopped.")
         sys.exit(1)
 
-    # Step 3: Summary
+    # Step 3: Generate and log threshold comparison
+    print("\nSTEP 3: Generating Threshold Comparison")
+    print("="*70)
+    run_command(
+        "python scripts/mlflow_comparison.py",
+        "Threshold Comparison"
+    )
+
+    # Step 4: Summary
     print("\n" + "="*70)
     print("PIPELINE COMPLETED SUCCESSFULLY!")
     print("="*70)
@@ -87,7 +95,12 @@ def main():
     print("  - Model: results/models/patchcore_surface.pkl")
     print("  - Metrics: results/metrics.json")
     print("  - Inference: results/inference_latest/")
-    print("\nView results in MLflow:")
+    print("  - Comparison: results/figures/confusion_matrices_comparison.png")
+    print("\nMLflow Logged:")
+    print("  - Training metrics (AUROC, F1, etc)")
+    print("  - Inference metrics (accuracy, precision, recall)")
+    print("  - Threshold comparison image")
+    print("\nView all results in MLflow:")
     print("  bash scripts/start_mlflow.sh")
     print("  Then open http://localhost:5000 in your browser")
     print("="*70 + "\n")

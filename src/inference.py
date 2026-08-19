@@ -28,6 +28,7 @@ from .dataset import MVTecDataset
 from .main import setup_logging
 from .check_device import get_device
 from .mlflow_utils import setup_mlflow, start_run, end_run, log_inference_results
+import mlflow
 
 logger = logging.getLogger(__name__)
 
@@ -455,6 +456,45 @@ def main():
 
     # Log results to MLflow
     log_inference_results(output_dir.parent, output_dir.name)
+
+    # Log inference metrics if ground truth available
+    if results:
+        scores = [r['anomaly_score'] for r in results]
+        try:
+            # Extract ground truth
+            test_labels = []
+            for result in results:
+                path = result['image_path']
+                if 'good' in path:
+                    test_labels.append(0)
+                elif 'broken' in path or 'defect' in path:
+                    test_labels.append(1)
+                else:
+                    test_labels.append(None)
+
+            # Only log if we have ground truth
+            if None not in test_labels:
+                from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+                threshold = detector.threshold if hasattr(detector, 'threshold') else np.mean(scores)
+                preds = (np.array(scores) > threshold).astype(int)
+
+                cm = confusion_matrix(test_labels, preds)
+                tn, fp, fn, tp = cm[0, 0], cm[0, 1], cm[1, 0], cm[1, 1]
+
+                # Log metrics
+                mlflow.log_metrics({
+                    'inference_accuracy': accuracy_score(test_labels, preds),
+                    'inference_precision': precision_score(test_labels, preds, zero_division=0),
+                    'inference_recall': recall_score(test_labels, preds, zero_division=0),
+                    'inference_f1': f1_score(test_labels, preds, zero_division=0),
+                    'inference_tn': tn,
+                    'inference_fp': fp,
+                    'inference_fn': fn,
+                    'inference_tp': tp,
+                })
+                logger.info("Inference metrics logged to MLflow")
+        except Exception as e:
+            logger.warning(f"Could not log inference metrics: {e}")
 
     # Print final summary with output locations (clean format, no timestamps)
     print("\n" + "="*70)
