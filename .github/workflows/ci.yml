@@ -94,6 +94,10 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install dependencies
+        run: |
+          pip install PyYAML
+
       - name: Verify package structure
         run: |
           test -d src && test -d scripts && test -d config
