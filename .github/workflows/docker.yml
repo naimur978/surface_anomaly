@@ -21,7 +21,7 @@ jobs:
         with:
           context: .
           push: false
-          tags: patchcore:latest
+          tags: surface-anomaly:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -40,17 +40,17 @@ jobs:
         with:
           context: .
           load: true
-          tags: patchcore:test
+          tags: surface-anomaly:test
           cache-from: type=gha
 
       - name: Test imports in container
         run: |
-          docker run --rm patchcore:test python -c "from src.config import load_config; print('config OK')"
-          docker run --rm patchcore:test python -c "from src.dataset import MVTecDataset; print('dataset OK')"
-          docker run --rm patchcore:test python -c "from src.models import FeatureExtractor, PatchCore; print('models OK')"
-          docker run --rm patchcore:test python -c "from src.metrics import compute_metrics; print('metrics OK')"
-          docker run --rm patchcore:test python -c "from src.visualization import plot_evaluation; print('visualization OK')"
+          docker run --rm surface-anomaly:test python -c "from src.config import load_config; print('config OK')"
+          docker run --rm surface-anomaly:test python -c "from src.dataset import MVTecDataset; print('dataset OK')"
+          docker run --rm surface-anomaly:test python -c "from src.models import FeatureExtractor, PatchCore; print('models OK')"
+          docker run --rm surface-anomaly:test python -c "from src.metrics import compute_metrics; print('metrics OK')"
+          docker run --rm surface-anomaly:test python -c "from src.visualization import plot_evaluation; print('visualization OK')"
 
       - name: Test CLI help
         run: |
-          docker run --rm patchcore:test python scripts/train.py --help 2>/dev/null || echo "CLI structure OK"
+          docker run --rm surface-anomaly:test python scripts/train.py --help 2>/dev/null || echo "CLI structure OK"

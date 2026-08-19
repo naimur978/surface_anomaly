@@ -1,4 +1,4 @@
-# Multi-stage build for PatchCore anomaly detection
+# Multi-stage build for Surface Anomaly Detection and Localization
 
 # Stage 1: Builder
 FROM python:3.10-slim as builder
