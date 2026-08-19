@@ -39,7 +39,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 python scripts/mlflow_ui.py
 ```
 
-Then open `http://localhost:5000` in your browser.
+If port 5000 is already in use, the script will ask to kill the existing process. Then open `http://localhost:5000` in your browser.
 
 **Terminal 2 - Run Pipeline:**
 
