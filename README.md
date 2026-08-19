@@ -98,5 +98,9 @@ results/
 
 ## References
 
+[1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
+
+[2] T. Defard, A. Setkov, A. Loesch, and S. Braun, "PaDiM: a patch distribution modeling framework for anomaly detection and localization," in Proceedings of the 25th International Conference on Pattern Recognition (ICPR), 2021, pp. 475–482.
+
 Baseline model comparison can be found in `baseline_model.ipynb`. For a quick overview of the project, see the summarized notebook at `notebook.ipynb`.
 
