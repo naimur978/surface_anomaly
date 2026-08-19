@@ -40,11 +40,12 @@ def log_training_params(config):
     """
     # Log model parameters
     mlflow.log_params({
-        'model_name': config['model']['name'],
-        'batch_size': config['training']['batch_size'],
-        'crop_size': config['model']['crop_size'],
-        'coreset_ratio': config['model']['coreset_ratio'],
-        'n_neighbors': config['model']['n_neighbors'],
+        'feature_extractor': config['model'].get('feature_extractor', 'dinov2_vitb14'),
+        'batch_size': config['training'].get('batch_size', 32),
+        'crop_size': config['image'].get('crop_size', 224),
+        'coreset_ratio': config['model'].get('coreset_ratio', 0.15),
+        'n_neighbors': config['model'].get('n_neighbors', 9),
+        'seed': config['training'].get('seed', 42),
     })
 
 
