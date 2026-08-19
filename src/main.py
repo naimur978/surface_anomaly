@@ -4,77 +4,20 @@ PatchCore Anomaly Detection Training Orchestration
 Main entry point that coordinates data loading, model training, and evaluation.
 """
 
-import logging
 import sys
-import os
-from datetime import datetime
 from pathlib import Path
-import json
 import warnings
+from io import StringIO
 
-import numpy as np
-import yaml
 import torch
 from torch.utils.data import DataLoader
-import random
 
 from .dataset import MVTecDataset
+from .config import setup_logging, load_config, setup_directories, set_seed, print_gpu_info
 from .training import train_patchcore, evaluate_model, save_results
 from .check_device import get_device
 
 warnings.filterwarnings('ignore')
-
-
-# ============================================================================
-# SETUP UTILITIES
-# ============================================================================
-def setup_logging(log_file):
-    """Setup logging configuration."""
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-    return logging.getLogger(__name__)
-
-
-def load_config(config_path="config.yaml"):
-    """Load configuration from YAML file."""
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
-
-
-def setup_directories(config):
-    """Create necessary output directories."""
-    output_config = config['output']
-    for dir_key in ['results_dir', 'figures_dir', 'models_dir', 'predictions_dir', 'logs_dir']:
-        Path(output_config[dir_key]).mkdir(parents=True, exist_ok=True)
-    return output_config
-
-
-def set_seed(seed=42):
-    """Set random seeds for reproducibility."""
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
-
-def print_gpu_info(logger, device):
-    """Print GPU information if available."""
-    if device.type == 'cuda':
-        logger.info(f"GPU: {torch.cuda.get_device_name(0)}")
-        logger.info(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
-    elif device.type == 'mps':
-        logger.info("Using Metal Performance Shaders (MacBook GPU)")
-    else:
-        logger.info("Using CPU")
 
 
 # ============================================================================
@@ -98,9 +41,6 @@ def main(config_path="config.yaml"):
     print_gpu_info(logger, device)
 
     # Load data (suppress dataset prints)
-    import sys
-    from io import StringIO
-
     old_stdout = sys.stdout
     sys.stdout = StringIO()
 
