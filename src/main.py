@@ -1,7 +1,7 @@
 """
-PatchCore Anomaly Detection Training Pipeline
+PatchCore Anomaly Detection Training Orchestration
 
-Main training orchestration using DINOv2 features and PatchCore method.
+Main entry point that coordinates data loading, model training, and evaluation.
 """
 
 import logging
@@ -10,7 +10,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 import json
-import pickle
 import warnings
 
 import numpy as np
@@ -19,17 +18,10 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-from tqdm import tqdm
 import random
 
-from .models import FeatureExtractor, PatchCore
-from .metrics import (
-    compute_metrics, find_threshold_for_recall, compute_confusion_metrics,
-    save_metrics, plot_confusion_matrix
-)
-from .visualization import plot_evaluation
+from .training import train_patchcore, evaluate_model, save_results
 from .check_device import get_device
-from . import utils_data
 
 warnings.filterwarnings('ignore')
 
@@ -165,55 +157,6 @@ class MVTecDataset(Dataset):
 
 
 # ============================================================================
-# DATA PROCESSING
-# ============================================================================
-def extract_all_patches(loader, extractor, logger=None):
-    """Extract all patches from training images."""
-    all_patches = []
-    hw_shape = None
-    for batch_idx, (imgs, _, _, _) in enumerate(loader):
-        patches, hw = extractor.extract(imgs)
-        hw_shape = hw
-        B, HW, C = patches.shape
-        all_patches.append(patches.reshape(-1, C))
-
-        if logger and batch_idx % 5 == 0:
-            logger.info(f"  Processed {batch_idx + 1}/{len(loader)} batches")
-
-    return torch.cat(all_patches, dim=0), hw_shape
-
-
-def compute_image_scores(loader, extractor, model, logger=None):
-    """Compute anomaly scores for all images."""
-    scores = []
-    for imgs, _, _, _ in tqdm(loader, desc="Scoring", disable=not logger):
-        patches, _ = extractor.extract(imgs)
-        B, HW, C = patches.shape
-        for i in range(B):
-            scores.append(model.score_image(patches[i].numpy()))
-    return scores
-
-
-def collect_predictions(loader, extractor, model, logger=None):
-    """Collect predictions and score maps for evaluation."""
-    scores, labels, paths = [], [], []
-    score_maps, masks_list = [], []
-
-    for imgs, masks, lbls, pths in tqdm(loader, desc="Evaluating", disable=not logger):
-        patches, _ = extractor.extract(imgs)
-        B, HW, C = patches.shape
-        for i in range(B):
-            patch_i = patches[i].numpy()
-            scores.append(model.score_image(patch_i))
-            score_maps.append(model.score_map(patch_i))
-            labels.append(lbls[i].item())
-            paths.append(pths[i])
-            masks_list.append(masks[i, 0].numpy())
-
-    return np.array(scores), np.array(labels), paths, score_maps, masks_list
-
-
-# ============================================================================
 # MAIN TRAINING PIPELINE
 # ============================================================================
 def main(config_path="config.yaml"):
@@ -264,76 +207,16 @@ def main(config_path="config.yaml"):
 
     sys.stdout = old_stdout
 
-    # Extract features
-    logger.info("\nExtracting features...")
-    extractor = FeatureExtractor(device=device, logger=logger)
-
-    all_train_patches, hw_shape = extract_all_patches(train_loader, extractor, logger)
-    logger.info(f"Training patches: {len(all_train_patches):,} vectors")
-
-    # Train model
-    logger.info("\nTraining PatchCore...")
-    model = PatchCore(
-        coreset_ratio=config['model']['coreset_ratio'],
-        n_neighbors=config['model'].get('n_neighbors', 9),
-        device=device,
-        logger=logger
-    )
-    model.fit(all_train_patches, hw_shape)
+    # Train
+    model, extractor = train_patchcore(train_loader, val_loader, device, config, output_config, logger)
 
     # Evaluate
-    logger.info("\nEvaluating on validation set...")
-    val_scores, val_labels, val_paths, val_score_maps, val_masks = collect_predictions(
-        val_loader, extractor, model, logger
+    metrics, val_scores, val_labels, _, _ = evaluate_model(
+        val_loader, extractor, model, train_loader, config, output_config, logger
     )
 
-    # Compute thresholds
-    threshold_99_percentile = np.percentile(np.array(compute_image_scores(train_loader, extractor, model)), 99)
-    threshold_100_recall = find_threshold_for_recall(val_scores, val_labels, target_recall=1.0)
-
-    logger.info(f"\n99th Percentile Threshold: {threshold_99_percentile:.4f}")
-    logger.info(f"100% Recall Threshold: {threshold_100_recall:.4f}")
-
-    # Compute metrics
-    auroc_image, auroc_pixel, f1 = compute_metrics(
-        val_scores, val_labels, val_score_maps, val_masks, threshold_100_recall
-    )
-
-    # F2 score (recall-focused)
-    from sklearn.metrics import fbeta_score
-    preds_binary = (val_scores > threshold_100_recall).astype(int)
-    f2 = fbeta_score(val_labels, preds_binary, beta=2, zero_division=0)
-
-    metrics = {
-        'auroc_image': float(auroc_image),
-        'auroc_pixel': float(auroc_pixel),
-        'f1': float(f1),
-        'threshold': float(threshold_99_percentile),
-        'recall_threshold': float(threshold_100_recall),
-        'f2_recall': float(f2)
-    }
-
-    logger.info(f"\nResults:")
-    logger.info(f"  AUROC (image): {auroc_image:.4f}")
-    logger.info(f"  AUROC (pixel): {auroc_pixel:.4f}")
-    logger.info(f"  F1 Score: {f1:.4f}")
-    logger.info(f"  F2 Score (recall focus): {f2:.4f}")
-
-    # Save outputs
-    logger.info(f"\nSaving outputs...")
-    model_path = Path(output_config['models_dir']) / f"patchcore_{config['data']['category']}.pkl"
-    with open(model_path, 'wb') as f:
-        pickle.dump(model, f)
-    logger.info(f"  Model: {model_path}")
-
-    save_metrics(metrics, output_config['results_dir'])
-    logger.info(f"  Metrics: {Path(output_config['results_dir']) / 'metrics.json'}")
-
-    # Visualizations
-    preds_cm = (val_scores > threshold_100_recall).astype(int)
-    plot_confusion_matrix(val_labels, preds_cm, output_config['figures_dir'])
-    plot_evaluation(val_scores, val_labels, auroc_image, threshold_100_recall,
-                   f"{output_config['figures_dir']}/evaluation.png")
+    # Save
+    save_results(model, metrics, val_scores, val_labels, output_config, config, logger)
 
     logger.info("=" * 60)
     logger.info("TRAINING COMPLETE")
