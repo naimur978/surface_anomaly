@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  patchcore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: patchcore-anomaly
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./config:/app/config
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python scripts/train.py config/config.yaml
+    # Uncomment for GPU support (requires nvidia-docker)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: patchcore-inference
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./config:/app/config
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python scripts/inference.py --model results/models/patchcore_surface.pkl --folder data/surface/test --output ./results/inference_latest --visualize
+    depends_on:
+      - patchcore
