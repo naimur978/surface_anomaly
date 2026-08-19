@@ -20,7 +20,7 @@ image:
 # Model Configuration
 model:
   # Feature extraction backbone: "dinov2_vitb14" or "efficientnet_b4"
-  feature_extractor: "dinov2_vitb14"
+  feature_extractor: "efficientnet_b4"
   coreset_ratio: 0.15                   # Coreset sampling ratio
   n_neighbors: 9                        # Number of neighbors for KNN
   device: "cuda"                        # Device: cuda, mps (MacBook), or cpu
