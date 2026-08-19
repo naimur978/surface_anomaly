@@ -15,7 +15,10 @@ from .metrics import (
     compute_metrics, find_threshold_for_recall,
     save_metrics, plot_confusion_matrix
 )
-from .visualization import plot_evaluation
+from .visualization import (
+    plot_evaluation, visualize_random_heatmaps,
+    visualize_preprocessing_pipeline
+)
 from .tracing import ExecutionTracer
 
 
@@ -137,7 +140,8 @@ def evaluate_model(val_loader, extractor, model, train_loader, config, output_co
     return metrics, val_scores, val_labels, val_score_maps, val_masks
 
 
-def save_results(model, metrics, val_scores, val_labels, output_config, config, logger):
+def save_results(model, metrics, val_scores, val_labels, val_score_maps, val_dataset,
+                 output_config, config, logger):
     """Save model, metrics, and visualizations."""
     logger.info(f"\nSaving outputs...")
 
@@ -156,7 +160,27 @@ def save_results(model, metrics, val_scores, val_labels, output_config, config, 
     # Visualizations
     preds_cm = (val_scores > metrics['recall_threshold']).astype(int)
     plot_confusion_matrix(val_labels, preds_cm, output_config['figures_dir'])
+    logger.info(f"  Confusion Matrix: {Path(output_config['figures_dir']) / 'confusion_matrix.png'}")
+
     plot_evaluation(
         val_scores, val_labels, metrics['auroc_image'], metrics['recall_threshold'],
         f"{output_config['figures_dir']}/evaluation.png"
     )
+    logger.info(f"  Evaluation Plot: {Path(output_config['figures_dir']) / 'evaluation.png'}")
+
+    # Random heatmap samples
+    if val_score_maps:
+        visualize_random_heatmaps(
+            val_dataset, val_scores, val_labels, val_score_maps,
+            metrics['recall_threshold'],
+            n_samples=4,
+            output_path=f"{output_config['figures_dir']}/random_heatmaps.png"
+        )
+        logger.info(f"  Random Heatmaps: {Path(output_config['figures_dir']) / 'random_heatmaps.png'}")
+
+    # Preprocessing pipeline
+    visualize_preprocessing_pipeline(
+        val_dataset, n_samples=2,
+        output_path=f"{output_config['figures_dir']}/preprocessing_pipeline.png"
+    )
+    logger.info(f"  Preprocessing Pipeline: {Path(output_config['figures_dir']) / 'preprocessing_pipeline.png'}")

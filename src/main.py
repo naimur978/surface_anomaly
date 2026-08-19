@@ -83,7 +83,7 @@ def main(config_path="config.yaml"):
     model, extractor = train_patchcore(train_loader, val_loader, device, config, output_config, logger)
 
     # Evaluate
-    metrics, val_scores, val_labels, _, _ = evaluate_model(
+    metrics, val_scores, val_labels, val_score_maps, _ = evaluate_model(
         val_loader, extractor, model, train_loader, config, output_config, logger
     )
 
@@ -91,7 +91,8 @@ def main(config_path="config.yaml"):
     log_training_metrics(metrics)
 
     # Save
-    save_results(model, metrics, val_scores, val_labels, output_config, config, logger)
+    save_results(model, metrics, val_scores, val_labels, val_score_maps, val_dataset,
+                 output_config, config, logger)
 
     # Log artifacts
     log_artifacts(output_config['results_dir'])
