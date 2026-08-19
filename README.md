@@ -54,7 +54,7 @@ python scripts/run_pipeline.py config/config.yaml
 
 This will sequentially run: data validation → training → inference.
 
-**Note:** I put Docker but ran it on CPU. Since I'm on MacBook, I ran with MPS (Metal Performance Shaders) for GPU acceleration. We recommend running with Python scripts directly for best performance. When configuring `config/config.yaml`, set the device to your available hardware (cuda for NVIDIA, mps for MacBook, or cpu as fallback).
+**Note:** I put Docker but ran it on CPU. Since I'm on MacBook, I ran with MPS (Metal Performance Shaders) for GPU acceleration. We recommend running with Python scripts directly for best performance on your hardware.
 
 ## Expected Output
 
