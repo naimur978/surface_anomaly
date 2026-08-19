@@ -1,6 +1,6 @@
 # Surface Anomaly Localization
 
-This work is about detecting and localizing surface defects using DINOv2/EfficientNet feature extractors with k-NN anomaly scoring. This documentation briefly explains the methods and rationale used in the implementation.
+This work is about detecting and localizing surface defects using DINOv2/EfficientNet feature extractors with k-NN anomaly scoring. Below, I am going to explain my key decisions and rationale as briefly as possible.
 
 ## Installation
 
