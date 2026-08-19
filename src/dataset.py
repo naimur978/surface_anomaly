@@ -16,8 +16,9 @@ class MVTecDataset(Dataset):
     IMAGENET_STD = [0.229, 0.224, 0.225]
 
     def __init__(self, root, category, split="train", crop_size=224):
-        self.root = Path(root) / category / split
-        self.mask_root = Path(root) / category / "ground_truth"
+        root = Path(root).resolve()  # Convert to absolute path
+        self.root = root / category / split
+        self.mask_root = root / category / "ground_truth"
         self.split = split
         self.transform = self._build_transform(crop_size, normalize=True)
         self.mask_transform = self._build_transform(crop_size, normalize=False)
@@ -73,12 +74,16 @@ class MVTecDataset(Dataset):
         """Load ground truth mask."""
         if mask_path is None:
             return torch.zeros(1, img_t.shape[1], img_t.shape[2])
-        mask = Image.open(mask_path).convert("L")
-        mask_t = self.mask_transform(mask)
-        return (mask_t > 0.5).float()
+        try:
+            mask = Image.open(mask_path).convert("L")
+            mask_t = self.mask_transform(mask)
+            return (mask_t > 0.5).float()
+        except (FileNotFoundError, OSError):
+            # Mask not found, return empty mask
+            return torch.zeros(1, img_t.shape[1], img_t.shape[2])
 
     def __getitem__(self, idx):
         img_path, mask_path, label = self.samples[idx]
         img_t = self.transform(Image.open(img_path).convert("RGB"))
         mask_t = self._load_mask(mask_path, img_t)
-        return img_t, mask_t, label, str(img_path)
+        return img_t, mask_t, label, str(img_path.absolute())

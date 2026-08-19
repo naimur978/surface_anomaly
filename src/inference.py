@@ -82,15 +82,22 @@ class AnomalyDetector:
             Dictionary with scores and heatmap
         """
         # Load and preprocess image
-        img = Image.open(image_path).convert('RGB')
+        try:
+            img = Image.open(image_path).convert('RGB')
+        except (FileNotFoundError, OSError) as e:
+            raise FileNotFoundError(f"Cannot open image: {image_path}") from e
 
         # Use MVTecDataset transform (suppress dataset info printing)
         import logging
         logging.getLogger('patchcore_anomaly_detection').setLevel(logging.WARNING)
 
+        root_dir = self.config.get('data', {}).get('root_dir', './data')
+        if not root_dir.startswith('/'):
+            root_dir = str(Path(root_dir).resolve())
+
         dataset = MVTecDataset(
-            self.config.get('data', {}).get('root_dir', '.'),
-            self.config.get('data', {}).get('category', 'test'),
+            root_dir,
+            self.config.get('data', {}).get('category', 'surface'),
             split='test',
             crop_size=self.config.get('image', {}).get('crop_size', 224)
         )
