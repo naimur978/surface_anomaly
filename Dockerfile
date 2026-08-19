@@ -42,6 +42,5 @@ COPY config/ ./config/
 # Create directories for data and results
 RUN mkdir -p data results/models results/figures results/inference_latest
 
-# Default command
-ENTRYPOINT ["python"]
-CMD ["scripts/train.py", "config/config.yaml"]
+# Default command (no ENTRYPOINT, let CMD handle everything)
+CMD ["python", "scripts/train.py", "config/config.yaml"]
