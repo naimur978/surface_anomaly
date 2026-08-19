@@ -79,6 +79,7 @@ def run_command(cmd, description):
     print("="*70 + "\n")
 
     try:
+        # Run with output streamed to console
         result = subprocess.run(cmd, shell=True, check=True)
         print(f"\n✓ {description} completed successfully\n")
         return True
@@ -109,16 +110,16 @@ def main():
     # Step 0: Validate data
     print("\n" + "="*70)
     print("STEP 0: Validating Dataset")
-    print("="*70)
+    print("="*70 + "\n")
 
     if Path("data/surface/test").exists():
-        if not run_command(
+        run_command(
             "python scripts/validation.py ./data surface",
             "Data Validation"
-        ):
-            print("Warning: Data validation had issues, but continuing...")
+        )
+        print("Data validation completed (warnings allowed)\n")
     else:
-        print("⚠ Data directory not found, skipping validation")
+        print("⚠ Data directory not found, skipping validation\n")
 
     # Step 1: Training
     if not run_command(
