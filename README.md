@@ -4,11 +4,34 @@ Detects and localizes surface defects using DINOv2/EfficientNet feature extracto
 
 ## Installation
 
-Clone the repository and install dependencies:
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/naimur978/surface_anomaly.git
 cd surface_anomaly
+```
+
+2. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
+
+```bash
+# Your dataset structure should look like:
+data/
+└── Anomaly Detection Data/
+    ├── Feature 1/
+    │   ├── mask.png
+    │   ├── training/
+    │   ├── test_ok/
+    │   └── test_nok/
+    └── Feature 2/
+        ├── mask.png
+        ├── training/
+        ├── test_ok/
+        └── test_nok/
+```
+
+3. Install Python dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -50,4 +73,6 @@ results/
 ```
 
 **MLflow Tracking:**
-Open `http://localhost:5000` to view experiment metrics, parameters, and timing benchmarks.
+Open `http://localhost:5000` to view experiment metrics, parameters, and timing benchmarks. 
+
+
