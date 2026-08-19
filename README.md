@@ -23,13 +23,13 @@ source venv/bin/activate
 
 ### 2. Train Model
 ```bash
-python run.py
+python entrypoints/train.py
 ```
 Trains on `data/surface/train/` and saves model to `results/models/patchcore_surface.pkl`
 
 ### 3. Run Inference
 ```bash
-python infer.py \
+python entrypoints/inference.py \
   --model results/models/patchcore_surface.pkl \
   --folder data/surface/test \
   --output ./results/inference_all \
@@ -38,7 +38,7 @@ python infer.py \
 
 ### 4. Validate Data (Optional)
 ```bash
-python validate.py
+python entrypoints/validation.py
 ```
 
 ## Project Structure
@@ -67,9 +67,12 @@ test_final/
 │   └── inference_all/                     # Latest inference results
 │       ├── results.json                   # 536 predictions
 │       ├── confusion_matrix.png           # Confusion matrix
-│       └── mismatches/normal_defective/   # False positive heatmaps
+│       └── mismatches/false_positives/    # False positive heatmaps
 │
-└── run.py, infer.py, validate.py          # Entry points
+└── entrypoints/
+    ├── train.py                           # Training entrypoint
+    ├── inference.py                       # Inference entrypoint
+    └── validation.py                      # Data validation entrypoint
 ```
 
 ## Model Performance

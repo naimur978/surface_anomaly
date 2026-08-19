@@ -338,8 +338,7 @@ def main():
                 mismatches_dir.mkdir(exist_ok=True)
 
                 for idx, result, expected, predicted in mismatches:
-                    mismatch_type = f"{expected}_{predicted}"
-                    mismatch_subdir = mismatches_dir / mismatch_type
+                    mismatch_subdir = mismatches_dir / "false_positives"
                     mismatch_subdir.mkdir(exist_ok=True)
 
                     try:
@@ -455,14 +454,14 @@ def main():
     if (output_dir / "inference.log").exists():
         print(f"  - inference.log")
 
-    # Show mismatches if any
+    # Show false positives if any
     mismatches_dir = output_dir / "mismatches"
     if mismatches_dir.exists():
-        print(f"\n  Mismatched Predictions:")
-        for mismatch_type_dir in sorted(mismatches_dir.iterdir()):
-            if mismatch_type_dir.is_dir():
-                count = len(list(mismatch_type_dir.glob("*.png")))
-                print(f"    - mismatches/{mismatch_type_dir.name}/ ({count} images)")
+        false_positives_dir = mismatches_dir / "false_positives"
+        if false_positives_dir.exists():
+            count = len(list(false_positives_dir.glob("*.png")))
+            print(f"\n  False Positive Heatmaps: {count} images")
+            print(f"    - mismatches/false_positives/")
 
     print("="*70 + "\n")
 
