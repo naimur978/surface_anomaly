@@ -3,18 +3,20 @@
 import time
 import mlflow
 from functools import wraps
-from typing import Callable
+from typing import Callable, Any, Optional, TypeVar
+
+F = TypeVar('F', bound=Callable[..., Any])
 
 
-def log_trace(step_name: str):
+def log_trace(step_name: str) -> Callable[[F], F]:
     """Decorator to log execution time of a step to MLflow.
 
     Args:
         step_name: Name of the step being traced
     """
-    def decorator(func: Callable):
+    def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             start_time = time.time()
             try:
                 result = func(*args, **kwargs)
@@ -35,21 +37,21 @@ def log_trace(step_name: str):
 class ExecutionTracer:
     """Context manager for tracing execution blocks."""
 
-    def __init__(self, step_name: str):
+    def __init__(self, step_name: str) -> None:
         """Initialize tracer.
 
         Args:
             step_name: Name of the step being traced
         """
         self.step_name = step_name
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
-    def __enter__(self):
+    def __enter__(self) -> 'ExecutionTracer':
         """Start timing."""
         self.start_time = time.time()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[Exception], exc_tb: Optional[Any]) -> bool:
         """Stop timing and log to MLflow."""
         duration = time.time() - self.start_time
 

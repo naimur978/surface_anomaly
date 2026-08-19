@@ -93,11 +93,6 @@ def main():
         print("✗ Inference failed. Pipeline stopped.")
         sys.exit(1)
 
-    # Step 3: Generate and log threshold comparison
-    run_command(
-        "python scripts/mlflow_comparison.py",
-        "Generating threshold comparison"
-    )
 
     # Step 4: Summary
     print("\n" + "="*70)

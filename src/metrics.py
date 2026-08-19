@@ -2,6 +2,7 @@
 Metrics computation and evaluation utilities.
 """
 
+from typing import Dict, List, Tuple, Any
 import numpy as np
 from sklearn.metrics import roc_auc_score, f1_score, fbeta_score, confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ import json
 from pathlib import Path
 
 
-def compute_metrics(scores, labels, score_maps, masks_list, threshold):
+def compute_metrics(scores: np.ndarray, labels: np.ndarray, score_maps: List[np.ndarray], masks_list: List[np.ndarray], threshold: float) -> Tuple[float, float, float]:
     """Compute AUROC and F1 metrics."""
     auroc_image = roc_auc_score(labels, scores)
 
@@ -23,7 +24,7 @@ def compute_metrics(scores, labels, score_maps, masks_list, threshold):
     return auroc_image, auroc_pixel, f1
 
 
-def find_threshold_for_recall(scores, labels, target_recall=1.0):
+def find_threshold_for_recall(scores: np.ndarray, labels: np.ndarray, target_recall: float = 1.0) -> float:
     """Find threshold that achieves target recall."""
     thresholds = np.sort(scores)
     best_t = thresholds[0]
@@ -40,7 +41,7 @@ def find_threshold_for_recall(scores, labels, target_recall=1.0):
     return best_t
 
 
-def compute_confusion_metrics(labels, scores, threshold):
+def compute_confusion_metrics(labels: np.ndarray, scores: np.ndarray, threshold: float) -> Dict[str, Any]:
     """Compute confusion matrix and derived metrics."""
     preds = (scores > threshold).astype(int)
     cm = confusion_matrix(labels, preds)
@@ -62,7 +63,7 @@ def compute_confusion_metrics(labels, scores, threshold):
     }
 
 
-def plot_confusion_matrix(labels, preds, output_dir="./results/figures", dpi=150):
+def plot_confusion_matrix(labels: np.ndarray, preds: np.ndarray, output_dir: str = "./results/figures", dpi: int = 150) -> None:
     """Plot and save confusion matrix."""
     cm = confusion_matrix(labels, preds)
     fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
@@ -74,7 +75,7 @@ def plot_confusion_matrix(labels, preds, output_dir="./results/figures", dpi=150
     plt.close()
 
 
-def save_metrics(metrics_dict, output_dir="./results"):
+def save_metrics(metrics_dict: Dict[str, Any], output_dir: str = "./results") -> None:
     """Save metrics to JSON."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

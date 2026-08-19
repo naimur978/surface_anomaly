@@ -1,6 +1,7 @@
 """MLflow experiment tracking utilities."""
 
 import os
+from typing import Dict, Any, Optional
 # Allow file store to avoid maintenance mode warning
 os.environ['MLFLOW_ALLOW_FILE_STORE'] = 'true'
 
@@ -10,7 +11,7 @@ import json
 from pathlib import Path
 
 
-def setup_mlflow(experiment_name='surface-anomaly-detection', tracking_uri='./mlruns'):
+def setup_mlflow(experiment_name: str = 'surface-anomaly-detection', tracking_uri: str = './mlruns') -> str:
     """Initialize MLflow experiment.
 
     Args:
@@ -32,7 +33,7 @@ def setup_mlflow(experiment_name='surface-anomaly-detection', tracking_uri='./ml
     return experiment_id
 
 
-def log_training_params(config):
+def log_training_params(config: Dict[str, Any]) -> None:
     """Log training hyperparameters to MLflow.
 
     Args:
@@ -74,7 +75,7 @@ def log_training_params(config):
     mlflow.log_params(params)
 
 
-def log_training_metrics(metrics):
+def log_training_metrics(metrics: Dict[str, Any]) -> None:
     """Log training metrics to MLflow.
 
     Args:
@@ -89,7 +90,7 @@ def log_training_metrics(metrics):
     })
 
 
-def log_model(model_path, model_name='surface_anomaly'):
+def log_model(model_path: str | Path, model_name: str = 'surface_anomaly') -> None:
     """Log trained model to MLflow.
 
     Args:
@@ -101,7 +102,7 @@ def log_model(model_path, model_name='surface_anomaly'):
         mlflow.log_artifact(str(model_path), artifact_path='models')
 
 
-def log_artifacts(results_dir):
+def log_artifacts(results_dir: str | Path) -> None:
     """Log result artifacts (metrics, confusion matrix, etc).
 
     Args:
@@ -121,7 +122,7 @@ def log_artifacts(results_dir):
             mlflow.log_artifact(str(fig), artifact_path='figures')
 
 
-def log_inference_results(results_dir, output_name='inference_latest'):
+def log_inference_results(results_dir: str | Path, output_name: str = 'inference_latest') -> None:
     """Log inference results to MLflow.
 
     Args:
@@ -147,7 +148,7 @@ def log_inference_results(results_dir, output_name='inference_latest'):
                 mlflow.log_artifact(str(heatmap), artifact_path='inference/heatmaps')
 
 
-def start_run(run_name, tags=None):
+def start_run(run_name: str, tags: Optional[Dict[str, str]] = None) -> Any:
     """Start a new MLflow run.
 
     Args:
@@ -160,12 +161,12 @@ def start_run(run_name, tags=None):
     return run
 
 
-def end_run():
+def end_run() -> None:
     """End the current MLflow run."""
     mlflow.end_run()
 
 
-def log_dataset_info(dataset_stats):
+def log_dataset_info(dataset_stats: Dict[str, int]) -> None:
     """Log dataset statistics to MLflow.
 
     Args:

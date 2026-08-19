@@ -12,6 +12,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
+from typing import Dict, List, Optional, Any
 import json
 import pickle
 
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 class AnomalyDetector:
     """Wrapper for PatchCore inference"""
 
-    def __init__(self, model_path, config=None, device='cuda', logger=None):
+    def __init__(self, model_path: str | Path, config: Optional[Dict[str, Any]] = None, device: str = 'cuda', logger: Optional[logging.Logger] = None) -> None:
         """
         Initialize anomaly detector.
 
@@ -68,12 +69,12 @@ class AnomalyDetector:
         self.config = config or {}
         self.threshold = None
 
-    def set_threshold(self, threshold):
+    def set_threshold(self, threshold: float) -> None:
         """Set anomaly detection threshold"""
         self.threshold = threshold
         self.logger.info(f"Threshold set to {threshold:.4f}")
 
-    def detect(self, image_path, return_heatmap=True):
+    def detect(self, image_path: str | Path, return_heatmap: bool = True) -> Dict[str, Any]:
         """
         Detect anomalies in a single image.
 
@@ -139,7 +140,7 @@ class AnomalyDetector:
 
         return result
 
-    def batch_detect(self, image_folder, return_heatmaps=False):
+    def batch_detect(self, image_folder: str | Path, return_heatmaps: bool = False) -> List[Dict[str, Any]]:
         """
         Detect anomalies in multiple images.
 
@@ -182,7 +183,7 @@ class AnomalyDetector:
         return results
 
 
-def visualize_detection(image_path, result, save_path=None):
+def visualize_detection(image_path: str | Path, result: Dict[str, Any], save_path: Optional[str] = None) -> None:
     """
     Visualize anomaly detection result.
 
@@ -232,7 +233,7 @@ def visualize_detection(image_path, result, save_path=None):
     plt.close(fig)
 
 
-def main():
+def main() -> None:
     """Main inference script"""
     parser = argparse.ArgumentParser(description='PatchCore Anomaly Detection Inference')
 

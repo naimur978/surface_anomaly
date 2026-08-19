@@ -2,6 +2,7 @@
 Visualization utilities for training and evaluation.
 """
 
+from typing import List, Optional, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
@@ -10,7 +11,7 @@ from PIL import Image
 import random
 
 
-def plot_roc_curve(ax, fpr, tpr, auroc_image):
+def plot_roc_curve(ax: plt.Axes, fpr: np.ndarray, tpr: np.ndarray, auroc_image: float) -> None:
     """Plot ROC curve."""
     ax.plot(fpr, tpr, color="#2E86AB", lw=2.5, label=f"AUROC = {auroc_image:.4f}")
     ax.plot([0, 1], [0, 1], "--", color="gray", lw=1.5, label="Random")
@@ -24,7 +25,7 @@ def plot_roc_curve(ax, fpr, tpr, auroc_image):
     ax.set_ylim([-0.02, 1.02])
 
 
-def plot_score_distribution(ax, test_scores, test_labels, threshold):
+def plot_score_distribution(ax: plt.Axes, test_scores: np.ndarray, test_labels: np.ndarray, threshold: float) -> None:
     """Plot score distribution with threshold line."""
     normal_scores = test_scores[test_labels == 0]
     defect_scores = test_scores[test_labels == 1]
@@ -40,7 +41,7 @@ def plot_score_distribution(ax, test_scores, test_labels, threshold):
     ax.grid(alpha=0.3)
 
 
-def plot_evaluation(test_scores, test_labels, auroc_image, threshold, output_path="./results/figures/evaluation.png"):
+def plot_evaluation(test_scores: np.ndarray, test_labels: np.ndarray, auroc_image: float, threshold: float, output_path: str = "./results/figures/evaluation.png") -> None:
     """Create ROC and score distribution plots."""
     fpr, tpr, _ = roc_curve(test_labels, test_scores)
 
@@ -54,8 +55,8 @@ def plot_evaluation(test_scores, test_labels, auroc_image, threshold, output_pat
     plt.close()
 
 
-def visualize_random_heatmaps(test_dataset, test_scores, test_labels, score_maps, threshold,
-                             n_samples=4, output_path="./results/figures/random_heatmaps.png", dpi=150):
+def visualize_random_heatmaps(test_dataset: Any, test_scores: np.ndarray, test_labels: np.ndarray, score_maps: List[np.ndarray], threshold: float,
+                             n_samples: int = 4, output_path: str = "./results/figures/random_heatmaps.png", dpi: int = 150) -> None:
     """
     Visualize random predictions with heatmaps.
     Shows: original image | heatmap | overlay with prediction
@@ -108,8 +109,8 @@ def visualize_random_heatmaps(test_dataset, test_scores, test_labels, score_maps
     plt.close()
 
 
-def visualize_roi_masking_effect(dataset_with_roi, dataset_without_roi, n_samples=4,
-                                output_path="./results/figures/roi_masking_effect.png", dpi=150):
+def visualize_roi_masking_effect(dataset_with_roi: Any, dataset_without_roi: Any, n_samples: int = 4,
+                                output_path: str = "./results/figures/roi_masking_effect.png", dpi: int = 150) -> None:
     """
     Visualize effect of ROI masking.
     Shows: original image | without masking | with masking
@@ -157,8 +158,8 @@ def visualize_roi_masking_effect(dataset_with_roi, dataset_without_roi, n_sample
     plt.close()
 
 
-def visualize_preprocessing_pipeline(test_dataset, n_samples=2,
-                                    output_path="./results/figures/preprocessing_pipeline.png", dpi=150):
+def visualize_preprocessing_pipeline(test_dataset: Any, n_samples: int = 2,
+                                    output_path: str = "./results/figures/preprocessing_pipeline.png", dpi: int = 150) -> None:
     """
     Visualize preprocessing pipeline.
     Shows: original → padded → resized for both image and mask

@@ -5,9 +5,11 @@ Device detection utility - Check available compute devices
 
 import torch
 import os
+from typing import Optional
+import logging
 
 
-def get_device(logger=None):
+def get_device(logger: Optional[logging.Logger] = None) -> torch.device:
     """
     Auto-select best available device with priority:
     1. CUDA (NVIDIA GPU)
@@ -30,7 +32,7 @@ def get_device(logger=None):
     return device
 
 
-def check_devices():
+def check_devices() -> None:
     """Check and display available compute devices"""
     print("\n" + "="*60)
     print("PYTORCH DEVICE AVAILABILITY CHECK")
@@ -138,7 +140,7 @@ def check_devices():
     print("="*60 + "\n")
 
 
-def benchmark_device():
+def benchmark_device() -> None:
     """Quick performance benchmark"""
     print("\nQUICK PERFORMANCE BENCHMARK")
     print("="*60)

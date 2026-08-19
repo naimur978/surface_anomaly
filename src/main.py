@@ -6,6 +6,7 @@ Main entry point that coordinates data loading, model training, and evaluation.
 
 import sys
 from pathlib import Path
+from typing import Dict, Any
 import warnings
 from io import StringIO
 
@@ -24,7 +25,7 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 # MAIN TRAINING PIPELINE
 # ============================================================================
-def main(config_path="config.yaml"):
+def main(config_path: str = "config.yaml") -> Dict[str, Any]:
     """Main training pipeline."""
     # Setup
     config = load_config(config_path)

@@ -4,6 +4,7 @@ Training pipeline for PatchCore model.
 
 import logging
 from pathlib import Path
+from typing import Dict, List, Tuple, Any, Optional
 import pickle
 import numpy as np
 from tqdm import tqdm
@@ -22,10 +23,10 @@ from .visualization import (
 from .tracing import ExecutionTracer
 
 
-def extract_all_patches(loader, extractor, logger=None):
+def extract_all_patches(loader: DataLoader, extractor: Any, logger: Optional[logging.Logger] = None) -> Tuple[torch.Tensor, Any]:
     """Extract all patches from training images."""
-    all_patches = []
-    hw_shape = None
+    all_patches: List[torch.Tensor] = []
+    hw_shape: Optional[Any] = None
     for batch_idx, (imgs, _, _, _) in enumerate(loader):
         patches, hw = extractor.extract(imgs)
         hw_shape = hw
@@ -38,9 +39,9 @@ def extract_all_patches(loader, extractor, logger=None):
     return torch.cat(all_patches, dim=0), hw_shape
 
 
-def compute_image_scores(loader, extractor, model, logger=None):
+def compute_image_scores(loader: DataLoader, extractor: Any, model: Any, logger: Optional[logging.Logger] = None) -> List[float]:
     """Compute anomaly scores for all images."""
-    scores = []
+    scores: List[float] = []
     for imgs, _, _, _ in tqdm(loader, desc="Scoring", disable=not logger):
         patches, _ = extractor.extract(imgs)
         B, HW, C = patches.shape
@@ -49,10 +50,13 @@ def compute_image_scores(loader, extractor, model, logger=None):
     return scores
 
 
-def collect_predictions(loader, extractor, model, logger=None):
+def collect_predictions(loader: DataLoader, extractor: Any, model: Any, logger: Optional[logging.Logger] = None) -> Tuple[np.ndarray, np.ndarray, List[str], List[np.ndarray], List[np.ndarray]]:
     """Collect predictions and score maps for evaluation."""
-    scores, labels, paths = [], [], []
-    score_maps, masks_list = [], []
+    scores: List[float] = []
+    labels: List[int] = []
+    paths: List[str] = []
+    score_maps: List[np.ndarray] = []
+    masks_list: List[np.ndarray] = []
 
     for imgs, masks, lbls, pths in tqdm(loader, desc="Evaluating", disable=not logger):
         patches, _ = extractor.extract(imgs)
@@ -69,9 +73,13 @@ def collect_predictions(loader, extractor, model, logger=None):
 
 
 def train_patchcore(
-    train_loader, val_loader, device, config,
-    output_config, logger
-):
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    device: torch.device,
+    config: Dict[str, Any],
+    output_config: Dict[str, str],
+    logger: logging.Logger
+) -> Tuple[Any, Any]:
     """Train PatchCore model."""
     with ExecutionTracer("Feature Extraction"):
         logger.info("\nExtracting features...")
@@ -95,7 +103,15 @@ def train_patchcore(
     return model, extractor
 
 
-def evaluate_model(val_loader, extractor, model, train_loader, config, output_config, logger):
+def evaluate_model(
+    val_loader: DataLoader,
+    extractor: Any,
+    model: Any,
+    train_loader: DataLoader,
+    config: Dict[str, Any],
+    output_config: Dict[str, str],
+    logger: logging.Logger
+) -> Tuple[Dict[str, float], np.ndarray, np.ndarray, List[np.ndarray], List[np.ndarray]]:
     """Evaluate model and compute metrics."""
     with ExecutionTracer("Evaluation"):
         logger.info("\nEvaluating on validation set...")
@@ -140,8 +156,17 @@ def evaluate_model(val_loader, extractor, model, train_loader, config, output_co
     return metrics, val_scores, val_labels, val_score_maps, val_masks
 
 
-def save_results(model, metrics, val_scores, val_labels, val_score_maps, val_dataset,
-                 output_config, config, logger):
+def save_results(
+    model: Any,
+    metrics: Dict[str, float],
+    val_scores: np.ndarray,
+    val_labels: np.ndarray,
+    val_score_maps: List[np.ndarray],
+    val_dataset: Any,
+    output_config: Dict[str, str],
+    config: Dict[str, Any],
+    logger: logging.Logger
+) -> None:
     """Save model, metrics, and visualizations."""
     logger.info(f"\nSaving outputs...")
 

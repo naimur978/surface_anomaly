@@ -4,6 +4,8 @@ Logs timing metrics to MLflow.
 """
 
 import time
+from pathlib import Path
+from typing import Optional, Dict, List, Any
 import numpy as np
 import torch
 import mlflow
@@ -12,24 +14,24 @@ import mlflow
 class InferenceTimer:
     """Context manager for timing inference operations."""
 
-    def __init__(self, name="inference"):
+    def __init__(self, name: str = "inference") -> None:
         self.name = name
-        self.start_time = None
-        self.elapsed = None
+        self.start_time: Optional[float] = None
+        self.elapsed: Optional[float] = None
 
-    def __enter__(self):
+    def __enter__(self) -> 'InferenceTimer':
         self.start_time = time.perf_counter()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         self.elapsed = time.perf_counter() - self.start_time
 
-    def elapsed_ms(self):
+    def elapsed_ms(self) -> float:
         """Get elapsed time in milliseconds."""
         return self.elapsed * 1000 if self.elapsed else 0
 
 
-def measure_inference_time(detector, image_paths, device, n_warmup=5, logger=None):
+def measure_inference_time(detector: Any, image_paths: List[str | Path], device: str, n_warmup: int = 5, logger: Optional[Any] = None) -> Optional[Dict[str, Any]]:
     """
     Measure per-image inference time.
 
@@ -86,7 +88,7 @@ def measure_inference_time(detector, image_paths, device, n_warmup=5, logger=Non
     }
 
 
-def benchmark_inference(detector, image_paths, config, logger=None):
+def benchmark_inference(detector: Any, image_paths: List[str | Path], config: Dict[str, Any], logger: Optional[Any] = None) -> Dict[str, Dict[str, Any]]:
     """
     Benchmark inference on available devices.
 
@@ -142,7 +144,7 @@ def benchmark_inference(detector, image_paths, config, logger=None):
     return results
 
 
-def log_inference_timing_to_mlflow(results):
+def log_inference_timing_to_mlflow(results: Dict[str, Dict[str, Any]]) -> None:
     """
     Log inference timing results to MLflow.
 

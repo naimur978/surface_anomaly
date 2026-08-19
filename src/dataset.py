@@ -3,6 +3,7 @@ MVTec dataset loader with preprocessing and ROI masking.
 """
 
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -16,7 +17,7 @@ class MVTecDataset(Dataset):
     IMAGENET_MEAN = [0.485, 0.456, 0.406]
     IMAGENET_STD = [0.229, 0.224, 0.225]
 
-    def __init__(self, root, category, split="train", crop_size=224, apply_roi_mask=False):
+    def __init__(self, root: str | Path, category: str, split: str = "train", crop_size: int = 224, apply_roi_mask: bool = False) -> None:
         root = Path(root).resolve()  # Convert to absolute path
         self.root = root / category / split
         self.mask_root = root / category / "ground_truth"
@@ -34,9 +35,9 @@ class MVTecDataset(Dataset):
         self.samples = self._build_samples()
         self._print_summary(category)
 
-    def _load_roi_masks(self, root):
+    def _load_roi_masks(self, root: Path) -> Dict[str, np.ndarray]:
         """Load ROI masks from parent data folder (mask.png for each feature)."""
-        roi_masks = {}
+        roi_masks: Dict[str, np.ndarray] = {}
         parent = root.parent.parent  # Go up to find data root with features
 
         # Look for mask.png files in Feature 1, Feature 2, etc.
@@ -51,7 +52,7 @@ class MVTecDataset(Dataset):
 
         return roi_masks
 
-    def _apply_roi_mask(self, img):
+    def _apply_roi_mask(self, img: Image.Image) -> Image.Image:
         """Apply ROI mask to image (black out non-ROI regions)."""
         if not self.apply_roi_mask or not self.roi_masks:
             return img
@@ -73,7 +74,7 @@ class MVTecDataset(Dataset):
 
         return img
 
-    def _pad_to_square(self, img, pad_color=0):
+    def _pad_to_square(self, img: Image.Image, pad_color: int = 0) -> Image.Image:
         """Pad image to square."""
         w, h = img.size
         size = max(w, h)
@@ -81,7 +82,7 @@ class MVTecDataset(Dataset):
         new_img.paste(img, ((size - w) // 2, (size - h) // 2))
         return new_img
 
-    def _build_transform(self, crop_size, normalize):
+    def _build_transform(self, crop_size: int, normalize: bool) -> transforms.Compose:
         """Build image transformation pipeline."""
         ops = [
             transforms.Lambda(lambda img: self._apply_roi_mask(img) if self.apply_roi_mask else img),
@@ -93,14 +94,14 @@ class MVTecDataset(Dataset):
             ops.append(transforms.Normalize(self.IMAGENET_MEAN, self.IMAGENET_STD))
         return transforms.Compose(ops)
 
-    def _resolve_mask_path(self, class_name, img_path):
+    def _resolve_mask_path(self, class_name: str, img_path: Path) -> Optional[Path]:
         """Find mask file for defective image."""
         mask_path = self.mask_root / class_name / (img_path.stem + "_mask.png")
         return mask_path if mask_path.exists() else None
 
-    def _build_samples(self):
+    def _build_samples(self) -> List[Tuple[Path, Optional[Path], int]]:
         """Build list of (image_path, mask_path, label) tuples."""
-        samples = []
+        samples: List[Tuple[Path, Optional[Path], int]] = []
         for class_dir in sorted(self.root.iterdir()):
             if not class_dir.is_dir():
                 continue
@@ -110,17 +111,17 @@ class MVTecDataset(Dataset):
                 samples.append((img_path, mask_path, label))
         return samples
 
-    def _print_summary(self, category):
+    def _print_summary(self, category: str) -> None:
         """Print dataset summary."""
         n_normal = sum(1 for _, _, l in self.samples if l == 0)
         n_defect = sum(1 for _, _, l in self.samples if l == 1)
         roi_status = "✓ ROI masking enabled" if self.apply_roi_mask else "✗ No ROI masking"
         print(f"Dataset '{self.split}' [{category}]: {n_normal} normal | {n_defect} defective | {roi_status}")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.samples)
 
-    def _load_mask(self, mask_path, img_t):
+    def _load_mask(self, mask_path: Optional[Path], img_t: torch.Tensor) -> torch.Tensor:
         """Load ground truth mask."""
         if mask_path is None:
             return torch.zeros(1, img_t.shape[1], img_t.shape[2])
@@ -132,7 +133,7 @@ class MVTecDataset(Dataset):
             # Mask not found, return empty mask
             return torch.zeros(1, img_t.shape[1], img_t.shape[2])
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, int, str]:
         img_path, mask_path, label = self.samples[idx]
         img_t = self.transform(Image.open(img_path).convert("RGB"))
         mask_t = self._load_mask(mask_path, img_t)
