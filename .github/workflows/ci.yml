@@ -71,7 +71,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-          pip install pytest pytest-cov PyYAML Pillow tqdm scikit-learn matplotlib numpy
+          pip install pytest pytest-cov PyYAML Pillow tqdm scikit-learn matplotlib numpy mlflow
 
       - name: Run tests
         run: pytest tests/ -v --cov=src --cov-report=xml
@@ -131,7 +131,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-          pip install PyYAML Pillow tqdm scikit-learn matplotlib numpy
+          pip install PyYAML Pillow tqdm scikit-learn matplotlib numpy mlflow
 
       - name: Test module imports
         run: |
@@ -141,3 +141,4 @@ jobs:
           python -c "from src.metrics import compute_metrics; print('metrics module OK')"
           python -c "from src.visualization import plot_evaluation; print('visualization module OK')"
           python -c "from src.check_device import get_device; print('check_device module OK')"
+          python -c "from src.mlflow_utils import setup_mlflow; print('mlflow_utils module OK')"

@@ -16,6 +16,7 @@ from .dataset import MVTecDataset
 from .config import setup_logging, load_config, setup_directories, set_seed, print_gpu_info
 from .training import train_patchcore, evaluate_model, save_results
 from .check_device import get_device
+from .mlflow_utils import setup_mlflow, start_run, end_run, log_training_params, log_training_metrics, log_artifacts
 
 warnings.filterwarnings('ignore')
 
@@ -36,6 +37,11 @@ def main(config_path="config.yaml"):
     logger.info("=" * 60)
     logger.info("PATCHCORE ANOMALY DETECTION - TRAINING")
     logger.info("=" * 60)
+
+    # Initialize MLflow
+    setup_mlflow(experiment_name='surface-anomaly-detection')
+    run = start_run(run_name='patchcore_training')
+    logger.info(f"MLflow run started: {run.info.run_id}")
 
     device = get_device(logger=logger)
     print_gpu_info(logger, device)
@@ -68,6 +74,9 @@ def main(config_path="config.yaml"):
 
     sys.stdout = old_stdout
 
+    # Log training parameters
+    log_training_params(config)
+
     # Train
     model, extractor = train_patchcore(train_loader, val_loader, device, config, output_config, logger)
 
@@ -76,13 +85,21 @@ def main(config_path="config.yaml"):
         val_loader, extractor, model, train_loader, config, output_config, logger
     )
 
+    # Log metrics
+    log_training_metrics(metrics)
+
     # Save
     save_results(model, metrics, val_scores, val_labels, output_config, config, logger)
+
+    # Log artifacts
+    log_artifacts(output_config['results_dir'])
 
     logger.info("=" * 60)
     logger.info("TRAINING COMPLETE")
     logger.info("=" * 60)
+    logger.info(f"MLflow UI: mlflow ui --backend-store-uri ./mlruns")
 
+    end_run()
     return metrics
 
 

@@ -1,6 +1,17 @@
 version: '3.8'
 
 services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: surface-anomaly-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:///mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlruns/artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri file:///mlruns
   train:
     build:
       context: .
@@ -10,9 +21,12 @@ services:
       - ./data:/app/data
       - ./results:/app/results
       - ./config:/app/config
+      - ./mlruns:/app/mlruns
     environment:
       - PYTHONUNBUFFERED=1
     command: python scripts/train.py config/config.yaml
+    depends_on:
+      - mlflow
     # Uncomment for GPU support (requires nvidia-docker)
     # deploy:
     #   resources:

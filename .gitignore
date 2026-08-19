@@ -69,3 +69,7 @@ htmlcov/
 *.pickle
 checkpoints/
 models/saved_models/
+
+# MLflow experiment tracking
+mlruns/
+.mlflow/
