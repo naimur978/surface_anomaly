@@ -2,6 +2,8 @@
 PatchCore model components (Feature Extractor and PatchCore scoring).
 """
 
+from typing import Tuple, Optional
+import logging
 import torch
 import torch.nn as nn
 import numpy as np
@@ -19,7 +21,8 @@ torch.hub._validate_not_a_forked_repo = _patched_validate
 class FeatureExtractor(nn.Module):
     """Feature extractor with support for DINOv2 and EfficientNet backbones."""
 
-    def __init__(self, device, model_name='dinov2_vitb14', logger=None):
+    def __init__(self, device: torch.device, model_name: str = 'dinov2_vitb14',
+                 logger: Optional[logging.Logger] = None) -> None:
         super().__init__()
         self.device = device
         self.logger = logger
@@ -32,7 +35,8 @@ class FeatureExtractor(nn.Module):
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
-    def _init_dinov2(self, device, model_name, logger):
+    def _init_dinov2(self, device: torch.device, model_name: str,
+                     logger: Optional[logging.Logger]) -> None:
         """Initialize DINOv2 feature extractor."""
         os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')
         self.model = torch.hub.load('facebookresearch/dinov2', model_name, trust_repo=True).to(device).eval()
@@ -44,7 +48,8 @@ class FeatureExtractor(nn.Module):
         if logger:
             logger.info(f"{model_name} loaded successfully")
 
-    def _init_efficientnet(self, device, logger):
+    def _init_efficientnet(self, device: torch.device,
+                          logger: Optional[logging.Logger]) -> None:
         """Initialize EfficientNet B4 feature extractor."""
         from torchvision.models import efficientnet_b4, EfficientNet_B4_Weights
         from torchvision.models.feature_extraction import create_feature_extractor
@@ -75,8 +80,15 @@ class FeatureExtractor(nn.Module):
             logger.info("EfficientNet B4 loaded successfully")
 
     @torch.no_grad()
-    def extract(self, imgs):
-        """Extract patch embeddings from images."""
+    def extract(self, imgs: torch.Tensor) -> Tuple[torch.Tensor, Tuple[int, int]]:
+        """Extract patch embeddings from images.
+
+        Args:
+            imgs: Input images tensor (B, C, H, W)
+
+        Returns:
+            Tuple of (patch_embeddings, spatial_grid_shape)
+        """
         imgs = imgs.to(self.device)
         B, C, H, W = imgs.shape
         gh, gw = H // self.patch_size, W // self.patch_size
@@ -114,15 +126,16 @@ class FeatureExtractor(nn.Module):
 class PatchCore:
     """PatchCore anomaly detection with memory bank and k-NN scoring."""
 
-    def __init__(self, coreset_ratio=0.15, n_neighbors=9, device='cuda', logger=None):
+    def __init__(self, coreset_ratio: float = 0.15, n_neighbors: int = 9,
+                 device: str = 'cuda', logger: Optional[logging.Logger] = None) -> None:
         self.coreset_ratio = coreset_ratio
         self.n_neighbors = n_neighbors
         self.device = device
         self.logger = logger
-        self.memory_bank = None
-        self.hw_shape = None
+        self.memory_bank: Optional[torch.Tensor] = None
+        self.hw_shape: Optional[Tuple[int, int]] = None
 
-    def fit(self, all_patches, hw_shape, seed=42):
+    def fit(self, all_patches: torch.Tensor, hw_shape: Tuple[int, int], seed: int = 42) -> None:
         """Fit model with coreset selection."""
         self.hw_shape = hw_shape
         feats = all_patches if isinstance(all_patches, torch.Tensor) else torch.from_numpy(all_patches)
@@ -141,31 +154,31 @@ class PatchCore:
         if self.logger:
             self.logger.info(f"Final memory bank: {len(self.memory_bank):,} vectors")
 
-    def _greedy_coreset(self, feats, n_keep, seed=42):
+    def _greedy_coreset(self, feats: torch.Tensor, n_keep: int, seed: int = 42) -> np.ndarray:
         """Random sampling for coreset selection."""
         rng = np.random.default_rng(seed)
         selected = rng.choice(len(feats), size=n_keep, replace=False)
         return selected
 
-    def _to_tensor(self, patch_features):
+    def _to_tensor(self, patch_features: np.ndarray | torch.Tensor) -> torch.Tensor:
         """Convert to tensor if needed."""
         if isinstance(patch_features, np.ndarray):
             return torch.from_numpy(patch_features)
         return patch_features
 
-    def _compute_patch_scores(self, patch_features):
+    def _compute_patch_scores(self, patch_features: np.ndarray | torch.Tensor) -> np.ndarray:
         """Compute k-NN distances for patches."""
         x = self._to_tensor(patch_features).to(self.device)
         dists = torch.cdist(x, self.memory_bank)
         knn_dists, _ = torch.topk(dists, self.n_neighbors, dim=1, largest=False)
         return knn_dists[:, 0].cpu().numpy()
 
-    def score_image(self, patch_features):
+    def score_image(self, patch_features: np.ndarray | torch.Tensor) -> float:
         """Score entire image (max patch distance)."""
         scores = self._compute_patch_scores(patch_features)
         return float(scores.max())
 
-    def score_map(self, patch_features):
+    def score_map(self, patch_features: np.ndarray | torch.Tensor) -> np.ndarray:
         """Generate pixel-level anomaly map."""
         H, W = self.hw_shape
         scores = self._compute_patch_scores(patch_features).reshape(H, W)
