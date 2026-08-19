@@ -17,23 +17,50 @@ torch.hub._validate_not_a_forked_repo = _patched_validate
 
 
 class FeatureExtractor(nn.Module):
-    """DINOv2 feature extractor for patch embeddings."""
+    """Feature extractor with support for DINOv2 and EfficientNet backbones."""
 
     def __init__(self, device, model_name='dinov2_vitb14', logger=None):
         super().__init__()
         self.device = device
         self.logger = logger
+        self.model_name = model_name
+
+        if model_name == 'dinov2_vitb14':
+            self._init_dinov2(device, model_name, logger)
+        elif model_name == 'efficientnet_b4':
+            self._init_efficientnet(device, logger)
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
+
+    def _init_dinov2(self, device, model_name, logger):
+        """Initialize DINOv2 feature extractor."""
         os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')
         self.model = torch.hub.load('facebookresearch/dinov2', model_name, trust_repo=True).to(device).eval()
+        for p in self.model.parameters():
+            p.requires_grad = False
+        self.feature_dim = self.model.embed_dim
+        self.patch_size = self.model.patch_size
+        self.backbone_type = 'dinov2'
+        if logger:
+            logger.info(f"{model_name} loaded successfully")
+
+    def _init_efficientnet(self, device, logger):
+        """Initialize EfficientNet B4 feature extractor."""
+        from torchvision.models import efficientnet_b4, EfficientNet_B4_Weights
+        self.model = efficientnet_b4(weights=EfficientNet_B4_Weights.IMAGENET1K_V1).to(device).eval()
+
+        # Remove the final classification layer
+        self.model.classifier = nn.Identity()
 
         for p in self.model.parameters():
             p.requires_grad = False
 
-        self.feature_dim = self.model.embed_dim
-        self.patch_size = self.model.patch_size
+        self.feature_dim = 1792  # EfficientNet B4 output dim
+        self.patch_size = 16  # Approximate patch size for EfficientNet
+        self.backbone_type = 'efficientnet'
 
         if logger:
-            logger.info(f"{model_name} loaded successfully")
+            logger.info("EfficientNet B4 loaded successfully")
 
     @torch.no_grad()
     def extract(self, imgs):
@@ -41,7 +68,16 @@ class FeatureExtractor(nn.Module):
         imgs = imgs.to(self.device)
         B, C, H, W = imgs.shape
         gh, gw = H // self.patch_size, W // self.patch_size
-        tokens = self.model.forward_features(imgs)['x_norm_patchtokens']
+
+        if self.backbone_type == 'dinov2':
+            tokens = self.model.forward_features(imgs)['x_norm_patchtokens']
+        else:  # efficientnet
+            # Forward through EfficientNet to get features
+            features = self.model.features(imgs)  # (B, 1792, h, w)
+            B, C, h, w = features.shape
+            # Reshape to patch format: (B, h*w, C)
+            tokens = features.permute(0, 2, 3, 1).reshape(B, h * w, C)
+
         return tokens.cpu(), (gh, gw)
 
 
