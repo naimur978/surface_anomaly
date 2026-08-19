@@ -28,6 +28,7 @@ from .dataset import MVTecDataset
 from .main import setup_logging
 from .check_device import get_device
 from .mlflow_utils import setup_mlflow, start_run, end_run, log_inference_results
+from .inference_timing import benchmark_inference, log_inference_timing_to_mlflow
 import mlflow
 
 logger = logging.getLogger(__name__)
@@ -531,6 +532,40 @@ def main():
             print(f"    - mismatches/false_positives/")
 
     print("="*70 + "\n")
+
+    # Benchmark inference timing on available devices
+    if args.folder and Path(args.folder).exists():
+        logger.info("\nBenchmarking inference performance...")
+        image_files = list(Path(args.folder).rglob("*.png"))
+        if image_files:
+            try:
+                timing_results = benchmark_inference(detector, image_files, config, logger=logger)
+                if timing_results:
+                    log_inference_timing_to_mlflow(timing_results)
+                    logger.info("✓ Inference timing logged to MLflow")
+
+                    # Print summary
+                    print("\nInference Timing Summary:")
+                    print("-" * 60)
+                    for device, metrics in sorted(timing_results.items()):
+                        print(f"{device:6s}: {metrics['mean_ms']:7.2f}ms mean | "
+                              f"{metrics['std_ms']:6.2f}ms std | "
+                              f"{metrics['min_ms']:7.2f}ms min | "
+                              f"{metrics['max_ms']:7.2f}ms max")
+                    print("-" * 60)
+
+                    # Show speedups
+                    if 'cuda' in timing_results and 'cpu' in timing_results:
+                        speedup = timing_results['cpu']['mean_ms'] / timing_results['cuda']['mean_ms']
+                        print(f"CUDA: {speedup:.1f}x faster than CPU")
+
+                    if 'mps' in timing_results and 'cpu' in timing_results:
+                        speedup = timing_results['cpu']['mean_ms'] / timing_results['mps']['mean_ms']
+                        print(f"MPS: {speedup:.1f}x faster than CPU")
+                    print()
+
+            except Exception as e:
+                logger.warning(f"Could not benchmark inference: {str(e)}")
 
     # End MLflow run
     end_run()
