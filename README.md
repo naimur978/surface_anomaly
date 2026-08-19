@@ -86,9 +86,6 @@ results/
     └── surface_anomaly.log                                # Training log
 ```
 
-**MLflow Tracking:**
-Open `http://localhost:5000` to view experiment metrics, parameters, and timing benchmarks.
-
 ## My Plan
 
 ## MLflow
