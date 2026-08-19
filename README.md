@@ -93,18 +93,21 @@ results/
 I wanted to make this like what I would do in an actual work setup. In DevOps, I can focus on codebase only. But MLOps is tricky because there are 3 key variables for versioning I tried to keep track of in this project:
 
 1. **Codebase** - I used Git/GitHub with GitFlow for version control 
-2. **Model Artifacts** - I used MLflow for experiment tracking and model versioning:
-
-![MLflow Tracking](assets/mlflow.png)
-
+2. **Model Artifacts** - I used MLflow for experiment tracking and model versioning
 3. **Dataset** - Dataset remains similar across experiments, so I didn't use versioning. Otherwise, I would use DVC (Data Version Control)
 
 ### CI/CD Pipeline
 
 For continuous integration and deployment, I used:
 - **Unit Testing & Automation** - Automated tests validate model loading, feature extraction, and inference pipelines
-- **GitHub Actions** - Workflows for code linting, running test suites on push/PR, data validation, and model performance checks
+- **GitHub Actions** - Automated workflows run on every push/PR to ensure code quality and model performance:
+
+![GitHub Actions Workflow](assets/github_actions.png)
+
 - **Docker Containerization** - Dockerfile for reproducible deployments; handles CPU inference (GPU support recommended for production)
+- **MLflow Experiment Tracking** - Centralized logging of model metrics, parameters, and artifacts:
+
+![MLflow Tracking](assets/mlflow.png)
 
 
 ### Baseline Model Comparison
@@ -139,6 +142,3 @@ PatchCore seemed better, but that doesn't mean it will be better in the end. How
 [1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
 
 [2] T. Defard, A. Setkov, A. Loesch, and S. Braun, "PaDiM: a patch distribution modeling framework for anomaly detection and localization," in Proceedings of the 25th International Conference on Pattern Recognition (ICPR), 2021, pp. 475–482.
-
-Baseline model comparison can be found in `baseline_model.ipynb`. For a quick overview of the project, see the summarized notebook at `notebook.ipynb`.
-
