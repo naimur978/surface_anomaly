@@ -15,7 +15,7 @@ image:
   crop_size: 224                        # Crop size for model input
   img_size: 256                         # Original image size
   pad_color: 0                          # Padding color (0 = black, 255 = white)
-  apply_roi_mask: false                  # Apply ROI masking (mask.png) to hide non-ROI regions
+  apply_roi_mask: true                  # Apply ROI masking (mask.png) to hide non-ROI regions
   normalization: "imagenet"             # Normalization scheme
 
 # Model Configuration
