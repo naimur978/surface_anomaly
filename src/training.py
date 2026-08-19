@@ -72,7 +72,8 @@ def train_patchcore(
     """Train PatchCore model."""
     with ExecutionTracer("Feature Extraction"):
         logger.info("\nExtracting features...")
-        extractor = FeatureExtractor(device=device, logger=logger)
+        model_name = config['model'].get('feature_extractor', 'dinov2_vitb14')
+        extractor = FeatureExtractor(device=device, model_name=model_name, logger=logger)
 
         all_train_patches, hw_shape = extract_all_patches(train_loader, extractor, logger)
         logger.info(f"Training patches: {len(all_train_patches):,} vectors")
