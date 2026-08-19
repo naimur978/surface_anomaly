@@ -21,7 +21,7 @@ image:
 model:
   feature_extractor: "dinov2_vitb14"   # Feature extraction model
   coreset_ratio: 0.15                   # Coreset sampling ratio
-  n_neighbors: 9                        # Number of neighbors for KNN
+  n_neighbors: 11                        # Number of neighbors for KNN
   device: "cuda"                        # Device: cuda or cpu
 
 # Training Configuration

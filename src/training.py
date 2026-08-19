@@ -16,6 +16,7 @@ from .metrics import (
     save_metrics, plot_confusion_matrix
 )
 from .visualization import plot_evaluation
+from .tracing import ExecutionTracer
 
 
 def extract_all_patches(loader, extractor, logger=None):
@@ -69,65 +70,68 @@ def train_patchcore(
     output_config, logger
 ):
     """Train PatchCore model."""
-    logger.info("\nExtracting features...")
-    extractor = FeatureExtractor(device=device, logger=logger)
+    with ExecutionTracer("Feature Extraction"):
+        logger.info("\nExtracting features...")
+        extractor = FeatureExtractor(device=device, logger=logger)
 
-    all_train_patches, hw_shape = extract_all_patches(train_loader, extractor, logger)
-    logger.info(f"Training patches: {len(all_train_patches):,} vectors")
+        all_train_patches, hw_shape = extract_all_patches(train_loader, extractor, logger)
+        logger.info(f"Training patches: {len(all_train_patches):,} vectors")
 
     # Train model
-    logger.info("\nTraining PatchCore...")
-    model = PatchCore(
-        coreset_ratio=config['model']['coreset_ratio'],
-        n_neighbors=config['model'].get('n_neighbors', 9),
-        device=device,
-        logger=logger
-    )
-    model.fit(all_train_patches, hw_shape)
+    with ExecutionTracer("Model Training"):
+        logger.info("\nTraining PatchCore...")
+        model = PatchCore(
+            coreset_ratio=config['model']['coreset_ratio'],
+            n_neighbors=config['model'].get('n_neighbors', 9),
+            device=device,
+            logger=logger
+        )
+        model.fit(all_train_patches, hw_shape)
 
     return model, extractor
 
 
 def evaluate_model(val_loader, extractor, model, train_loader, config, output_config, logger):
     """Evaluate model and compute metrics."""
-    logger.info("\nEvaluating on validation set...")
-    val_scores, val_labels, val_paths, val_score_maps, val_masks = collect_predictions(
-        val_loader, extractor, model, logger
-    )
+    with ExecutionTracer("Evaluation"):
+        logger.info("\nEvaluating on validation set...")
+        val_scores, val_labels, val_paths, val_score_maps, val_masks = collect_predictions(
+            val_loader, extractor, model, logger
+        )
 
-    # Compute thresholds
-    threshold_99_percentile = np.percentile(
-        np.array(compute_image_scores(train_loader, extractor, model)), 99
-    )
-    threshold_100_recall = find_threshold_for_recall(val_scores, val_labels, target_recall=1.0)
+        # Compute thresholds
+        threshold_99_percentile = np.percentile(
+            np.array(compute_image_scores(train_loader, extractor, model)), 99
+        )
+        threshold_100_recall = find_threshold_for_recall(val_scores, val_labels, target_recall=1.0)
 
-    logger.info(f"\n99th Percentile Threshold: {threshold_99_percentile:.4f}")
-    logger.info(f"100% Recall Threshold: {threshold_100_recall:.4f}")
+        logger.info(f"\n99th Percentile Threshold: {threshold_99_percentile:.4f}")
+        logger.info(f"100% Recall Threshold: {threshold_100_recall:.4f}")
 
-    # Compute metrics
-    auroc_image, auroc_pixel, f1 = compute_metrics(
-        val_scores, val_labels, val_score_maps, val_masks, threshold_100_recall
-    )
+        # Compute metrics
+        auroc_image, auroc_pixel, f1 = compute_metrics(
+            val_scores, val_labels, val_score_maps, val_masks, threshold_100_recall
+        )
 
-    # F2 score (recall-focused)
-    from sklearn.metrics import fbeta_score
-    preds_binary = (val_scores > threshold_100_recall).astype(int)
-    f2 = fbeta_score(val_labels, preds_binary, beta=2, zero_division=0)
+        # F2 score (recall-focused)
+        from sklearn.metrics import fbeta_score
+        preds_binary = (val_scores > threshold_100_recall).astype(int)
+        f2 = fbeta_score(val_labels, preds_binary, beta=2, zero_division=0)
 
-    metrics = {
-        'auroc_image': float(auroc_image),
-        'auroc_pixel': float(auroc_pixel),
-        'f1': float(f1),
-        'threshold': float(threshold_99_percentile),
-        'recall_threshold': float(threshold_100_recall),
-        'f2_recall': float(f2)
-    }
+        metrics = {
+            'auroc_image': float(auroc_image),
+            'auroc_pixel': float(auroc_pixel),
+            'f1': float(f1),
+            'threshold': float(threshold_99_percentile),
+            'recall_threshold': float(threshold_100_recall),
+            'f2_recall': float(f2)
+        }
 
-    logger.info(f"\nResults:")
-    logger.info(f"  AUROC (image): {auroc_image:.4f}")
-    logger.info(f"  AUROC (pixel): {auroc_pixel:.4f}")
-    logger.info(f"  F1 Score: {f1:.4f}")
-    logger.info(f"  F2 Score (recall focus): {f2:.4f}")
+        logger.info(f"\nResults:")
+        logger.info(f"  AUROC (image): {auroc_image:.4f}")
+        logger.info(f"  AUROC (pixel): {auroc_pixel:.4f}")
+        logger.info(f"  F1 Score: {f1:.4f}")
+        logger.info(f"  F2 Score (recall focus): {f2:.4f}")
 
     return metrics, val_scores, val_labels, val_score_maps, val_masks
 
