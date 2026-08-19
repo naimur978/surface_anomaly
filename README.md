@@ -39,7 +39,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 python scripts/mlflow_ui.py
 ```
 
-I've already implemented automatic port 5000 conflict handling in the script. Then open `http://localhost:5000` in your browser.
+I have put the code to solve port conflict. So you can directly run the URL on your browser: `http://localhost:5000`
 
 **Terminal 2 - Run Pipeline:**
 
