@@ -38,15 +38,35 @@ def log_training_params(config):
     Args:
         config: Config dictionary
     """
-    # Log model parameters
-    mlflow.log_params({
+    # Log all important configuration parameters
+    params = {
+        # Model config
         'feature_extractor': config['model'].get('feature_extractor', 'dinov2_vitb14'),
-        'batch_size': config['training'].get('batch_size', 32),
-        'crop_size': config['image'].get('crop_size', 224),
         'coreset_ratio': config['model'].get('coreset_ratio', 0.15),
         'n_neighbors': config['model'].get('n_neighbors', 9),
+
+        # Image config
+        'crop_size': config['image'].get('crop_size', 224),
+        'img_size': config['image'].get('img_size', 256),
+        'normalization': config['image'].get('normalization', 'imagenet'),
+
+        # Training config
+        'batch_size': config['training'].get('batch_size', 32),
+        'num_workers': config['training'].get('num_workers', 0),
         'seed': config['training'].get('seed', 42),
-    })
+
+        # Evaluation config
+        'threshold_percentile': config['evaluation'].get('threshold_percentile', 99),
+        'target_recall': config['evaluation'].get('target_recall', 1.0),
+        'heatmap_smoothing': config['evaluation'].get('heatmap_smoothing', 4),
+
+        # Data config
+        'category': config['data'].get('category', 'surface'),
+        'train_split': config['data'].get('train_split', 'train'),
+        'test_split': config['data'].get('test_split', 'test'),
+    }
+
+    mlflow.log_params(params)
 
 
 def log_training_metrics(metrics):
