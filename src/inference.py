@@ -27,6 +27,7 @@ from .models import FeatureExtractor
 from .dataset import MVTecDataset
 from .main import setup_logging
 from .check_device import get_device
+from .mlflow_utils import setup_mlflow, start_run, end_run, log_inference_results
 
 logger = logging.getLogger(__name__)
 
@@ -255,6 +256,11 @@ def main():
     logger.info("PATCHCORE ANOMALY DETECTION - INFERENCE")
     logger.info("="*60)
 
+    # Initialize MLflow
+    setup_mlflow(experiment_name='surface-anomaly-detection')
+    run = start_run(run_name='patchcore_inference')
+    logger.info(f"MLflow run started: {run.info.run_id}")
+
     # Load config
     import yaml
     config = {}
@@ -447,6 +453,9 @@ def main():
         except Exception as e:
             logger.warning(f"Could not generate confusion matrix: {str(e)}")
 
+    # Log results to MLflow
+    log_inference_results(output_dir.parent, output_dir.name)
+
     # Print final summary with output locations (clean format, no timestamps)
     print("\n" + "="*70)
     print("INFERENCE COMPLETED")
@@ -462,6 +471,8 @@ def main():
     if (output_dir / "inference.log").exists():
         print(f"  - inference.log")
 
+    logger.info(f"MLflow UI: mlflow ui --backend-store-uri ./mlruns")
+
     # Show false positives if any
     mismatches_dir = output_dir / "mismatches"
     if mismatches_dir.exists():
@@ -472,6 +483,9 @@ def main():
             print(f"    - mismatches/false_positives/")
 
     print("="*70 + "\n")
+
+    # End MLflow run
+    end_run()
 
 
 if __name__ == "__main__":
