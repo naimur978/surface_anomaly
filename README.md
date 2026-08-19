@@ -2,6 +2,8 @@
 
 This work is about detecting and localizing surface defects using DINOv2/EfficientNet feature extractors with k-NN anomaly scoring. Below, I am going to explain my key decisions and rationale as briefly as possible.
 
+**Quick Overview:** If you don't wanna go through all the scripts, I have made a brief notebook at `notebook.ipynb`. You can see my work at a glance in the notebook.
+
 ## Installation
 
 1. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
@@ -87,6 +89,42 @@ results/
 ```
 
 ## My Plan
+
+I wanted to make this like what I would do in an actual work setup. In DevOps, I can focus on codebase only. But MLOps is tricky because there are 3 key variables for versioning I tried to keep track of in this project:
+
+1. **Codebase** - I used Git/GitHub with GitFlow for version control 
+2. **Model Artifacts** - I used MLflow for experiment tracking and model versioning:
+
+![MLflow Tracking](assets/mlflow.png)
+
+3. **Dataset** - Dataset remains similar across experiments, so I didn't use versioning. Otherwise, I would use DVC (Data Version Control)
+
+### CI/CD Pipeline
+
+For continuous integration and deployment, I used:
+- **Unit Testing & Automation** - Automated tests validate model loading, feature extraction, and inference pipelines
+- **GitHub Actions** - Workflows for code linting, running test suites on push/PR, data validation, and model performance checks
+- **Docker Containerization** - Dockerfile for reproducible deployments; handles CPU inference (GPU support recommended for production)
+
+
+### Baseline Model Comparison
+
+Initially, I read some recent CVPR papers, but then thought maybe I should start from basic approaches first. I found the **anomalib** library which allowed me to train several algorithms easily. As I used anomalib to train base models, I created the `data/surface/` folder structure following anomalib's documentation. I tried multiple models separately (PaDiM, PatchCore, GANomaly, Autoencoder) which you can find in `baseline_model.ipynb`.
+
+Here are the results I got:
+
+<div align="center">
+
+| Model | AUROC |
+|-------|-------|
+| PaDiM | 0.6875 |
+| **PatchCore** | **0.8750** |
+| GANomaly | 0.5417 |
+| Autoencoder | 0.3958 |
+
+</div>
+
+PatchCore seemed better, but that doesn't mean it will be better in the end. However, I took a leap of faith and decided to focus on improving PatchCore. My intention was to keep the ROC AUC above 0.98 to ensure it reliably separates defects from non-defects in production.
 
 ## MLflow
 
