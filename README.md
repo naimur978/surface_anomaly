@@ -30,18 +30,25 @@ pip install -r requirements.txt
 
 ## Usage
 
-Activate virtual environment and run the complete pipeline (data validation → training → inference):
+Open **two terminals** and activate virtual environment in both:
+
+**Terminal 1 - MLflow UI (optional, for experiment tracking):**
 
 ```bash
-# Activate virtual environment
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Start MLflow UI (optional, for experiment tracking)
 python scripts/mlflow_ui.py
+```
 
-# Run pipeline in another terminal
+Then open `http://localhost:5000` in your browser.
+
+**Terminal 2 - Run Pipeline:**
+
+```bash
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 python scripts/run_pipeline.py config/config.yaml
 ```
+
+This will sequentially run: data validation → training → inference.
 
 **Note:** While Docker support is available, we recommend running with Python scripts directly. Docker containerization has limitations with MPS (MacBook GPU), so the container runs on CPU only. For best performance, use native Python execution which supports CUDA/MPS/CPU acceleration.
 
