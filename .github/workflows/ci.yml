@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate:
-    name: Validate Data
+    name: Data Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,9 +22,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-          pip install -q PyYAML Pillow tqdm scikit-learn matplotlib numpy
+          pip install PyYAML Pillow tqdm scikit-learn matplotlib numpy
 
-      - name: Validate dataset structure
+      - name: Validate dataset
         run: python scripts/validation.py ./data surface
 
   lint:
@@ -42,19 +42,14 @@ jobs:
         run: |
           pip install flake8 pylint
 
-      - name: Lint with flake8
-        run: |
-          # Stop the build if there are Python syntax errors or undefined names
-          flake8 src/ scripts/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Exit-zero treats all errors as warnings
-          flake8 src/ scripts/ --count --exit-zero --max-line-length=120 --statistics
+      - name: Check syntax
+        run: flake8 src/ scripts/ --count --select=E9,F63,F7,F82 --show-source
 
-      - name: Lint with pylint
-        run: |
-          pylint src/ scripts/ --exit-zero --disable=C0111,C0103,R0913 || true
+      - name: Style check
+        run: flake8 src/ scripts/ --count --exit-zero --max-line-length=120
 
-  test-imports:
-    name: Test Imports
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     needs: validate
     steps:
@@ -69,22 +64,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-          pip install -q PyYAML Pillow tqdm scikit-learn matplotlib numpy
+          pip install pytest pytest-cov PyYAML Pillow tqdm scikit-learn matplotlib numpy
 
-      - name: Test module imports
-        run: |
-          python -c "from src.config import setup_logging, load_config; print('✓ config imports work')"
-          python -c "from src.dataset import MVTecDataset; print('✓ dataset imports work')"
-          python -c "from src.models import FeatureExtractor, PatchCore; print('✓ models imports work')"
-          python -c "from src.metrics import compute_metrics; print('✓ metrics imports work')"
-          python -c "from src.visualization import plot_evaluation; print('✓ visualization imports work')"
-          python -c "from src.check_device import get_device; print('✓ check_device imports work')"
-          echo "✓ All imports successful"
+      - name: Run tests
+        run: pytest tests/ -v --cov=src --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
 
   build:
-    name: Build & Package
+    name: Build Check
     runs-on: ubuntu-latest
-    needs: [validate, lint, test-imports]
+    needs: [validate, lint, unit-tests]
     steps:
       - uses: actions/checkout@v3
 
@@ -93,40 +87,46 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Create package structure
+      - name: Verify package structure
         run: |
-          echo "✓ Package structure verified"
-          ls -la src/
-          ls -la scripts/
-          ls -la config/
+          test -d src && test -d scripts && test -d config && test -d data
+          echo "Package structure verified"
 
-      - name: Check configuration
+      - name: Validate configuration
         run: |
           python -c "
           import yaml
           with open('config/config.yaml') as f:
               config = yaml.safe_load(f)
-          print('✓ Configuration valid')
-          print(f'  Device: {config[\"model\"][\"device\"]}')
-          print(f'  Model: {config[\"model\"][\"feature_extractor\"]}')
-          print(f'  Category: {config[\"data\"][\"category\"]}')
+          assert 'data' in config
+          assert 'model' in config
+          assert 'training' in config
+          print('Configuration valid')
           "
 
-  summary:
-    name: Pipeline Summary
+  test-imports:
+    name: Import Tests
     runs-on: ubuntu-latest
-    needs: [validate, lint, test-imports, build]
-    if: always()
+    needs: validate
     steps:
-      - name: Check results
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
         run: |
-          echo "✅ CI/CD Pipeline Completed"
-          echo ""
-          echo "Checks performed:"
-          echo "  ✓ Data validation"
-          echo "  ✓ Code quality (flake8, pylint)"
-          echo "  ✓ Module imports"
-          echo "  ✓ Package structure"
-          echo "  ✓ Configuration validation"
-          echo ""
-          echo "Ready for deployment!"
+          python -m pip install --upgrade pip
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install PyYAML Pillow tqdm scikit-learn matplotlib numpy
+
+      - name: Test module imports
+        run: |
+          python -c "from src.config import setup_logging, load_config; print('config module OK')"
+          python -c "from src.dataset import MVTecDataset; print('dataset module OK')"
+          python -c "from src.models import FeatureExtractor, PatchCore; print('models module OK')"
+          python -c "from src.metrics import compute_metrics; print('metrics module OK')"
+          python -c "from src.visualization import plot_evaluation; print('visualization module OK')"
+          python -c "from src.check_device import get_device; print('check_device module OK')"
