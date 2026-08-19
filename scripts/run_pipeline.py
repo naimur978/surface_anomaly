@@ -89,6 +89,9 @@ def run_command(cmd, description):
 
 def main():
     """Run the complete pipeline."""
+    # Allow file store for MLflow (disable maintenance mode warning)
+    os.environ['MLFLOW_ALLOW_FILE_STORE'] = 'true'
+
     print("\n" + "="*70)
     print("SURFACE ANOMALY DETECTION - COMPLETE PIPELINE")
     print("="*70)

@@ -1,5 +1,9 @@
 """MLflow experiment tracking utilities."""
 
+import os
+# Allow file store to avoid maintenance mode warning
+os.environ['MLFLOW_ALLOW_FILE_STORE'] = 'true'
+
 import mlflow
 import mlflow.pytorch
 import json
