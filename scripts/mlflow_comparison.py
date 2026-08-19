@@ -71,10 +71,9 @@ def log_threshold_comparison_to_mlflow():
 
         latest_run = runs[0]
 
-        # Log comparison image
-        mlflow.set_active_run(latest_run)
-        mlflow.log_artifact(str(comparison_file), artifact_path='comparison')
-        mlflow.end_run()
+        # Log comparison image to the run
+        with mlflow.start_run(run_id=latest_run.info.run_id):
+            mlflow.log_artifact(str(comparison_file), artifact_path='comparison')
 
         print(f"✓ Logged threshold comparison to MLflow")
         print(f"  Run ID: {latest_run.info.run_id}")

@@ -64,6 +64,9 @@ def log_training_params(config):
         'category': config['data'].get('category', 'surface'),
         'train_split': config['data'].get('train_split', 'train'),
         'test_split': config['data'].get('test_split', 'test'),
+
+        # Device config
+        'device': config['model'].get('device', 'cuda'),
     }
 
     mlflow.log_params(params)

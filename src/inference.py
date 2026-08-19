@@ -91,11 +91,18 @@ class AnomalyDetector:
 
         # Use MVTecDataset transform (suppress dataset info printing)
         import logging
+        import sys
+        from io import StringIO
+
         logging.getLogger('surface_anomaly_detection').setLevel(logging.WARNING)
 
         root_dir = self.config.get('data', {}).get('root_dir', './data')
         if not root_dir.startswith('/'):
             root_dir = str(Path(root_dir).resolve())
+
+        # Suppress stdout during dataset initialization
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
 
         dataset = MVTecDataset(
             root_dir,
@@ -104,6 +111,7 @@ class AnomalyDetector:
             crop_size=self.config.get('image', {}).get('crop_size', 224)
         )
 
+        sys.stdout = old_stdout
         logging.getLogger('surface_anomaly_detection').setLevel(logging.INFO)
 
         img_t = dataset.transform(img)
