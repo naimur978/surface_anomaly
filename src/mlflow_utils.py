@@ -48,6 +48,8 @@ def log_training_params(config):
         # Image config
         'crop_size': config['image'].get('crop_size', 224),
         'img_size': config['image'].get('img_size', 256),
+        'pad_color': config['image'].get('pad_color', 0),
+        'apply_roi_mask': config['image'].get('apply_roi_mask', False),
         'normalization': config['image'].get('normalization', 'imagenet'),
 
         # Training config

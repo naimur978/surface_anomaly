@@ -15,7 +15,7 @@ image:
   crop_size: 224                        # Crop size for model input
   img_size: 256                         # Original image size
   pad_color: 0                          # Padding color (0 = black, 255 = white)
-  apply_roi_mask: true                  # Apply ROI masking (mask.png) to hide non-ROI regions
+  apply_roi_mask: false                  # Apply ROI masking (mask.png) to hide non-ROI regions
   normalization: "imagenet"             # Normalization scheme
 
 # Model Configuration
@@ -24,7 +24,7 @@ model:
   # Note: Each backbone has its own trained model saved separately
   # DINOv2: 16x16 patches (256 per image), 768-dim features
   # EfficientNet: 28x28 patches (784 per image), 2224-dim features
-  feature_extractor: "efficientnet_b4"
+  feature_extractor: "dinov2_vitb14"
   coreset_ratio: 0.15                   # Coreset sampling ratio
   n_neighbors: 9                        # Number of neighbors for KNN
   device: "mps"                        # Device: cuda, mps (MacBook), or cpu
