@@ -45,6 +45,8 @@ I have put the code to solve port conflict. So you can directly run the URL on y
 
 Before running the pipeline, you can change the parameters in `config/config.yaml` to customize the model, device, feature extractor, and other settings.
 
+Once you put the configuration, you can run:
+
 ```bash
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 python scripts/run_pipeline.py config/config.yaml
