@@ -13,7 +13,8 @@ Modules:
 
 from .models import FeatureExtractor, PatchCore
 from .metrics import compute_metrics, find_threshold_for_recall
-from .main import MVTecDataset, setup_logging
+from .dataset import MVTecDataset
+from .main import setup_logging
 
 __version__ = "1.0.0"
 __all__ = [

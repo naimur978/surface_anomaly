@@ -24,7 +24,8 @@ from PIL import Image
 import torch
 
 from .models import FeatureExtractor
-from .main import MVTecDataset, setup_logging
+from .dataset import MVTecDataset
+from .main import setup_logging
 from .check_device import get_device
 
 logger = logging.getLogger(__name__)
