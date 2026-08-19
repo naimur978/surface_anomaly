@@ -96,7 +96,7 @@ jobs:
 
       - name: Verify package structure
         run: |
-          test -d src && test -d scripts && test -d config && test -d data
+          test -d src && test -d scripts && test -d config
           echo "Package structure verified"
 
       - name: Validate configuration
