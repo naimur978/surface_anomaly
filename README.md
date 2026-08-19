@@ -43,14 +43,14 @@ I have put the code to solve port conflict. So you can directly run the URL on y
 
 **Terminal 2 - Run Pipeline:**
 
+Before running the pipeline, you can change the parameters in `config/config.yaml` to customize the model, device, feature extractor, and other settings.
+
 ```bash
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 python scripts/run_pipeline.py config/config.yaml
 ```
 
 This will sequentially run: data validation → training → inference.
-
-You can change the parameters in `config/config.yaml` to customize the model, device, feature extractor, and other settings before running the pipeline.
 
 **Note:** While Docker support is available, we recommend running with Python scripts directly. Docker containerization has limitations with MPS (MacBook GPU), so the container runs on CPU only. For best performance, use native Python execution which supports CUDA/MPS/CPU acceleration.
 
