@@ -43,7 +43,7 @@ I have put the code to solve port conflict. So you can directly run the URL on y
 
 **Terminal 2 - Run Pipeline:**
 
-Before running the pipeline, you can change the parameters in `config/config.yaml` to customize the model, device, feature extractor, and other settings. Make sure to set the device to your hardware (cuda for NVIDIA GPU, mps for MacBook GPU, or cpu as fallback). I put mps as default as I am on Mac.
+Before running the pipeline, you can change the parameters in `config/config.yaml` to customize the model, device, feature extractor, and other settings. Make sure to set the device to your hardware (cuda for NVIDIA GPU, mps for MacBook GPU, or cpu as fallback). I put mps as default as I am on MacBook.
 
 Once you put the configuration, you can run:
 
