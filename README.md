@@ -408,18 +408,12 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
 ### 12.3 Long-term
-
-**Transformer-Based Approaches:**
 - **Zero-Shot CLIP + DINOv2 Ensemble** - Multimodal embeddings combining vision and text descriptions of defects. No labeled defects required.
 - **Contrastive Learning (SimCLR/BYOL)** - Self-supervised pretraining on 720 normal images for tighter normal boundary.
 - **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vs. your failed TTA which lacked model diversity).
 - **Transformer Attention for Sparse Features** - Reduce memory bank to 5K-10K critical patches via ViT attention pruning.
-
-**Benchmarking:**
-- Test on MVTec AD, VisA datasets to validate generalization beyond your specific surface type.
-- Key metrics: AUROC (image & pixel), F1-score, inference time (<30ms GPU target).
-
-**Priority:** Start with Zero-Shot CLIP (low risk) → Contrastive Learning (medium risk) → Industrial ViT fine-tuning (long-term SOTA).
+- **Benchmarking on MVTec AD & VisA** - Validate generalization beyond your specific surface type. Measure AUROC (image & pixel), F1-score, inference time (<30ms GPU target).
+- **Priority:** Start with Zero-Shot CLIP (low risk) → Contrastive Learning (medium risk) → Industrial ViT fine-tuning (long-term SOTA).
 
 ## 12. References
 
