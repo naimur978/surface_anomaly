@@ -1,6 +1,6 @@
 # Surface Anomaly Localization
 
-This work addresses surface defect detection and localization using Vision Transformer and CNN-based feature extractors with k-NN anomaly scoring, inspired by patch-based anomaly detection methods. Below, I am going to explain my key decisions and rationale as briefly as possible.
+This work develops an unsupervised anomaly detection solution for surface defect detection and localization on manufactured items. Below, I explain my approach, key decisions, and rationale as briefly as possible.
 
 **Quick Overview:** If you don't wanna go through all the scripts, I have made a brief notebook at `notebook.ipynb`. You can see my work at a glance in the notebook.
 
