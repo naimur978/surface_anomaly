@@ -351,19 +351,19 @@ During development, I experimented with several techniques that either didn't im
 
 The model achieves 99.81% image-level AUROC with DINOv2, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. This means the model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that DINOv2 features capture surface defects very effectively. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
 
-**Feature Extractor Performance on Test Set:**
+**Feature Extractor Comparison (Validation AUROC):**
 
 <div align="center">
 
-| Extractor | Validation AUROC | Test AUROC |
-|-----------|------------------|-----------|
-| **DINOv2 (final)** | 0.9625 | **0.9981** |
-| Qwen | 0.9388 | 0.9524 |
-| ResNet | 0.9487 | 0.9612 |
+| Extractor | Validation AUROC |
+|-----------|------------------|
+| **DINOv2** | **0.9625** |
+| ResNet | 0.9487 |
+| Qwen | 0.9388 |
 
 </div>
 
-DINOv2 shows consistent improvement from validation to test (96.25% → 99.81%), suggesting good generalization. The gap widens on test set: DINOv2 outperforms ResNet by 3.7% and Qwen by 4.6% in final AUROC.
+DINOv2 outperformed both alternatives, achieving the highest validation AUROC. This justified the selection of DINOv2 as the feature extractor for the final model.
 
 ![ROC Curve](assets/roc_curve.png)
 
