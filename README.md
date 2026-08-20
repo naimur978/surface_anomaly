@@ -444,10 +444,10 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
 ### 12.3 Long-term
-- **Test-Time Augmentation (TTA) with Diverse Models** - Previous TTA using two PatchCore models with same backbone lacked diversity and didn't improve AUROC
-  - **Better approach:** Ensemble DINOv2 + EfficientNet feature extractors (different architectures = orthogonal strengths)
-  - Average anomaly scores across both extractors
-  - Trade-off: 2x inference cost but potentially higher robustness to unseen defects
+- **Test-Time Augmentation (TTA) with Diverse Models** - Ensemble DINOv2 + EfficientNet feature extractors at inference time
+  - **Approach:** Average anomaly scores across both extractors (different architectures = orthogonal strengths)
+  - **Rationale:** Previous attempts with same-backbone models (Section 8) showed TTA needs diverse models to add value
+  - **Trade-off:** 2x inference cost but potentially higher robustness to unseen defects
 - **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vision + text embeddings)
 - **Transformer Attention for Sparse Features** - Reduce memory bank to 5K-10K critical patches via ViT attention pruning
 - **Benchmarking on MVTec AD & VisA** - Validate generalization beyond your specific surface type
