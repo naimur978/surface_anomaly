@@ -444,7 +444,6 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
 ### 12.3 Long-term
-- **Zero-Shot CLIP + DINOv2 Ensemble** - Multimodal embeddings combining vision and text descriptions of defects. No labeled defects required.
 - **Test-Time Augmentation (TTA) with Diverse Models** - Previous TTA using two PatchCore models with same backbone lacked diversity and didn't improve AUROC
   - **Better approach:** Ensemble DINOv2 + EfficientNet feature extractors (different architectures = orthogonal strengths)
   - Average anomaly scores across both extractors
