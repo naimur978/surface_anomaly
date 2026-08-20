@@ -448,7 +448,6 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
   - **Approach:** Average anomaly scores across both extractors (different architectures = orthogonal strengths)
   - **Rationale:** Previous attempts with same-backbone models (Section 8) showed TTA needs diverse models to add value
   - **Trade-off:** 2x inference cost but potentially higher robustness to unseen defects
-- **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vision + text embeddings)
 - **Transformer Attention for Sparse Features** - Reduce memory bank to 5K-10K critical patches via ViT attention pruning
 - **Benchmarking on MVTec AD & VisA** - Validate generalization beyond your specific surface type
   - Measure AUROC (image & pixel), F1-score, inference time (<30ms GPU target)
