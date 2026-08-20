@@ -291,24 +291,15 @@ During development, I experimented with several techniques that either didn't im
 
 ## 10. Evaluation Metrics
 
-| Metric | Purpose | Target |
-|--------|---------|--------|
-| **AUROC (Image)** | Discrimination ability across all thresholds | > 0.98 |
-| **AUROC (Pixel)** | Localization accuracy (per-pixel predictions) | > 0.90 |
-| **F1 Score** | Balanced precision-recall at chosen threshold | > 0.85 |
-| **F2 Score** | Recall-weighted (catch defects > precision) | > 0.80 |
-| **Confusion Matrix** | TP/FP/TN/FN breakdown for business analysis | Low FN rate |
+### Results on Surface Dataset
 
-### Actual Results on Surface Dataset
+| Metric | Value |
+|--------|-------|
+| **AUROC (Image-level)** | 0.9981 (99.81%) |
+| **AUROC (Pixel-level)** | 0.8898 (88.98%) |
+| **Decision Threshold** | 36.0894 |
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **AUROC (Image-level)** | 0.9981 (99.81%) | ✓ Exceeds 0.98 target |
-| **AUROC (Pixel-level)** | 0.8898 (88.98%) | ✓ Near 0.90 target |
-| **Decision Threshold** | 36.0894 | 100% recall prioritized |
-| **Inference Time (CPU)** | 25.9 s total | Full validation set |
-
-The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces.
+The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
 
 ### Inference Performance
 
