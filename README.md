@@ -151,7 +151,7 @@ For continuous integration and deployment, I used:
 
 ### 4.2 Baseline Model Comparison
 
-Initially, I read some recent CVPR papers, but then thought maybe I should start from basic approaches first. I found the **anomalib** library which allowed me to train several algorithms easily. As I used anomalib to train base models, I created the `data/surface/` folder structure following anomalib's documentation. I tried multiple models separately (PaDiM, PatchCore, GANomaly, Autoencoder) [1][2] which you can find in `baseline_model.ipynb`.
+Initially, I read some recent CVPR papers, but then thought maybe I should start from basic approaches first. I found the **anomalib** library which allowed me to train several SoTA algorithms easily. As I used anomalib to train base models, I created the `data/surface/` folder structure following anomalib's documentation. I tried multiple models separately (PaDiM, PatchCore, GANomaly, Autoencoder) [1][2] which you can find in `baseline_model.ipynb`.
 
 Here are the results I got:
 
@@ -163,6 +163,8 @@ Here are the results I got:
 | **PatchCore** | **0.8750** |
 | GANomaly | 0.5417 |
 | Autoencoder | 0.3958 |
+| DDPM Diffusion | 0.5313 |
+| RD4AD | 0.5173 |
 
 </div>
 
