@@ -146,13 +146,20 @@ Here are the results I got:
 
 PatchCore seemed better, but that doesn't mean it will be better in the end. However, I took a leap of faith and decided to focus on improving PatchCore. My intention was to keep the ROC AUC above 0.98 to ensure it reliably separates defects from non-defects in production.
 
+So I moved on with PatchCore as my core idea, and customized the idea, as I explained below.
+
 ## Problem Interpretation
 
-**Objective:** Detect and localize surface defects on manufactured items using unsupervised anomaly detection.
+**Objective:** Detect and localize surface defects on manufactured items using unsupervised anomaly detection. Images are captured in a controlled manner (fixed camera, consistent lighting, standardized setup) to eliminate environmental variables and focus purely on product surface anomalies.
 
-**Challenge:** Unlike supervised learning, we have limited or no labeled defect examples during training. The model must learn what "normal" looks like and flag deviations as anomalies. Additionally, we need **localization** (pixel-level heatmaps) not just classification (image-level scores).
+**Challenge:**
+- **No labeled defect examples** - Training data contains only "normal" samples; we have zero examples of actual defects
+- **Unknown defect types** - New defect patterns may appear at inference time that were never seen during training
+- **Subtle anomalies** - Some defects are barely visible as texture variations, not obvious visual flaws
+- **Localization requirement** - Must pinpoint defect location (pixel-level heatmaps), not just classify image as defective
+- **Limited training diversity** - Only normal surface variations in training set (material texture, manufacturing tolerances)
 
-**Real-world Context:** In manufacturing QA, false negatives (missing defects) are costly, while false positives (flagging good items) waste inspection resources. The goal is to maximize detection while minimizing false alarms.
+**Real-world Context:** This is a **one-class unsupervised classification problem** where my intention is to learn a tight boundary around "normal" samples and flag anything outside as anomalous. In manufacturing, defects reaching customers (false negatives) are catastrophic and costly. In contrast, false positives are acceptable since human reviewers filter them out at minimal cost. Therefore, the priority is **recall**: my plan is to optimize the threshold to catch every defect, even if it means accepting more false alarms. The model must err on the side of caution.
 
 ## Methodology
 
@@ -226,4 +233,8 @@ PatchCore seemed better, but that doesn't mean it will be better in the end. How
 
 [1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
 
-[2] T. Defard, A. Setkov, A. Loesch, and S. Braun, "PaDiM: a patch distribution modeling framework for anomaly detection and localization," in Proceedings of the 25th International Conference on Pattern Recognition (ICPR), 2021, pp. 475–482.
+[2] C. Zhou, R. C. Paffenroth, "Anomaly Detection with Robust Deep Autoencoders," in Proceedings of the 23rd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2017.
+
+[3] J. Oquab, T. Darcet, T. Moutakanni, et al., "DINOv2: Learning Robust Visual Features without Supervision," arXiv preprint arXiv:2304.07193, 2023.
+
+[4] D. Rippel, E. Mertens, and D. Merhav, "Modeling the distribution of normal data in pre-trained deep features for anomaly detection and localization," arXiv preprint arXiv:2005.14674, 2020.
