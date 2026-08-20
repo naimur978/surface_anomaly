@@ -285,13 +285,11 @@ During development, I experimented with several techniques that either didn't im
 
 ## 9. Assumptions
 
-1. **Normal training samples are representative** - Training set contains diverse normal variations (lighting, angles, surface texture)
-2. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
-3. **Feature extractor generalizes** - Pre-trained DINOv2 transfers well without fine-tuning
-4. **Threshold is stable** - 100% recall on validation generalizes to test set
-5. **No label noise** - Training data correctly labeled as normal (critical for unsupervised methods)
+1. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
+2. **Threshold generalizes** - 100% recall threshold on validation generalizes to unseen test data
+3. **No label noise** - Training data correctly labeled as normal (critical for one-class anomaly detection)
 
-## 9. Evaluation Metrics
+## 10. Evaluation Metrics
 
 | Metric | Purpose | Target |
 |--------|---------|--------|
@@ -321,7 +319,7 @@ The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, dem
 
 GPU inference is ~10x faster than CPU. This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
 
-## 10. Limitations
+## 11. Limitations
 
 1. **Limited training diversity** - Model trained on 1-2 surface types. May not generalize to new defect patterns
 2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity. Rare/subtle defects may be missed
@@ -330,7 +328,7 @@ GPU inference is ~10x faster than CPU. This validates the importance of GPU acce
 5. **No temporal context** - Treats images independently. Sequence anomalies (degradation trends) not captured
 6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
 
-## 11. Potential Room for Improvements
+## 12. Potential Room for Improvements
 
 ### 11.1 Short-term
 - **Adaptive thresholding** - Learn per-image or per-defect-type thresholds instead of global threshold
@@ -348,9 +346,9 @@ GPU inference is ~10x faster than CPU. This validates the importance of GPU acce
 - **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
 - **Active learning** - Iteratively select hard examples for human labeling to improve model
 
-## 12. Code Setup Plan
+## 13. Code Setup Plan
 
-## 13. References
+## 14. References
 
 [1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
 
