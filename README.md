@@ -392,9 +392,15 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity. Rare/subtle defects may be missed
 3. **Computational cost** - Current approach uses efficient 224×224 resolution and random coreset sampling to keep costs low. However, computational complexity would be prohibitively high if I used greedy coreset selection (O(n²) complexity, adding 321ms overhead) or high-resolution images (more patches to process). Transformer-based feature extractors also add overhead. These design choices trade some potential accuracy for practical inference speed.
 4. **Hyperparameter sensitivity** - Coreset ratio and k-neighbors require tuning per dataset
-5. **No temporal context** - Treats images independently. Sequence anomalies (degradation trends) not captured
-6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
-7. **No confidence intervals** - Reported metrics (99.81% AUROC, 36.0894 threshold) lack uncertainty estimates. Test set breakdown: 524 total images (524 normals + 12 defects). More critically, Feature 1 has only 2 defects vs. Feature 2's 10 defects, creating severe data imbalance. A single misclassified defect in Feature 1 changes its recall from 100% to 50%, while the same mistake in Feature 2 changes recall from 100% to 90%. I could have computed 95% confidence intervals using bootstrapping (resample test set 1000x) or K-fold cross-validation, but with only 12 defects total (especially 2 in Feature 1), confidence intervals would be extremely wide and uninformative. Statistical rigor is impossible without more data. For production deployment, I would recommend: (1) collect at least 100+ defects per feature type, (2) ensure balanced representation across feature types, (3) then compute proper confidence intervals before claiming performance guarantees.
+5. **Limited defective data** - Only 12 defective test images total (2 in Feature 1, 10 in Feature 2). A single misclassified defect changes Feature 1 recall from 100% to 50%. This severe data scarcity makes threshold validation unreliable and prevents generalization testing across defect types.
+6. **No confidence intervals** - Reported metrics (99.81% AUROC, 36.0894 threshold) lack uncertainty estimates:
+   - Could compute 95% confidence intervals via bootstrapping (resample test set 1000x) or K-fold cross-validation
+   - With only 12 defects, confidence intervals would be extremely wide and uninformative
+   - Statistical rigor impossible without more data
+   - **For production deployment, recommend:**
+     - Collect at least 100+ defects per feature type
+     - Ensure balanced representation across feature types
+     - Then compute proper confidence intervals before claiming performance guarantees
 
 ## 11. Potential Room for Improvements
 
