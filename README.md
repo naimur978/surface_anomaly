@@ -196,6 +196,10 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 
 I needed localization (spatial heatmaps) not just classification. Patch-based methods provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike autoencoders which rely mostly on fine-tuning. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
 
+## System Architecture Diagram
+
+![Architecture Diagram](assets/architecture_diagram.png)
+
 ## 7. Key Design Decisions
 
 ### 7.1 Dataset Strategy (Unified vs. Separate)
@@ -355,6 +359,8 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 **Images 2 & 3 (Memory Bank Gaps)**: Represent a systematic issue where the random 0.15 coreset sample doesn't adequately represent certain legitimate surface patterns. Subtle texture variations in these regions score high despite being normal. I attempted to address this through coreset ratio adjustment, but any tuning that reduced these false positives also degraded recall on true defects, forcing me to prioritize the recall objective.
 
 **Observation:** These false positives highlight a fundamental trade-off in one-class anomaly detection. Aggressive threshold or coreset tuning to reduce FP rate risks missing true defects. The current approach prioritizes zero false negatives (100% recall), accepting a 0.76% FP rate (4/524) as the acceptable cost for manufacturing quality assurance.
+
+![False Positive Analysis](assets/false_positive_analysis.png)
 
 ## 11. Limitations
 
