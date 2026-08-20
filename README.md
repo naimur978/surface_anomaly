@@ -327,6 +327,22 @@ The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, dem
 
 GPU inference is ~10x faster than CPU. This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
 
+### False Positives Analysis
+
+![False Positives](assets/false_positive.png)
+
+Out of 524 normal test images, I observed 4 false positives flagged as defective. Analysis of each:
+
+1. **Image 1 (Blurry reflections)**: Visually appears faulty with blurry/hazy regions. Initially considered as salt-and-pepper noise or blob artifacts, but manual tuning to exclude it degraded performance on other images. Fair classification as anomalous.
+
+2. **Image 2 (Memory bank gap)**: Likely a memory bank representation issue. Certain surface regions may not be adequately covered in the random 0.15 coreset sample, causing legitimate normal patterns to score high. Attempted to address through coreset tuning, but couldn't generalize without hurting recall on true defects.
+
+3. **Image 3 (Memory bank gap)**: Similar to Image 2. The random sampling misses subtle pattern variations that appear anomalous but are actually normal. Trade-off between false positive rate and recall robustness.
+
+4. **Image 4 (Visually faulty)**: Appears to have actual surface defects. Likely a mislabeling in the test set rather than a true false positive.
+
+**Observation:** These false positives highlight a fundamental trade-off in one-class anomaly detection. Aggressive threshold tuning to reduce FP rate risks missing true defects. The current approach prioritizes zero false negatives (100% recall), accepting a 0.76% FP rate (4/524) as the acceptable cost for manufacturing quality assurance.
+
 ## 11. Limitations
 
 1. **Limited training diversity** - Model trained on 1-2 surface types. May not generalize to new defect patterns
