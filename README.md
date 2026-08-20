@@ -401,10 +401,42 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 
 ### 12.2 Medium-term
 - **Domain-specific feature extraction** - Fine-tune DINOv2 on normal surface images using self-supervised learning (e.g., SimCLR, BYOL). Current pre-trained features are general-purpose (trained on ImageNet), which is robust but not optimized for subtle surface texture anomalies. Domain adaptation would learn surface-specific invariances (e.g., lighting changes, minor scratches that aren't defects) and make the feature space tighter for true defects. Constraint: requires 720+ good examples (we have exactly 720), which is minimal but feasible. I didn't attempt this initially because with only 720 training images, fine-tuning risks overfitting; however, self-supervised fine-tuning with strong data augmentation could work. Expected benefit: tighter normal boundary, fewer memory bank gaps (fewer Images 2-3 false positives).
+
+- **Production Monitoring & Concept Drift Detection** - Deploy monitoring system to log inference predictions, anomaly scores, and metadata (timestamp, camera condition, surface batch). Monitor for concept drift: when normal image score distribution shifts (e.g., new camera lighting, material changes, different product batch), the model's threshold may become stale. Trigger retraining when: (1) FP rate exceeds 2%, (2) FN rate detected (human review shows missed defects), (3) score distribution changes by >15% KL divergence. Approach: maintain running statistics of test scores; use ADWIN (Adaptive Windowing) or statistical tests to detect distribution shift. Why this matters: manufacturing conditions evolve; a model trained on Jan 2024 data may not work in Mar 2024 if production parameters change. Expected benefit: catches performance degradation before it impacts QA, enables continuous model improvement.
+
 - **Hierarchical k-NN** - Multi-scale patch analysis (local + global context) for better localization
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
-### 12.3 Long-term
+### 12.3 Long-term & Transformer Benchmarking
+
+**Advanced Transformer-Based Approaches:**
+
+Recent SOTA methods in transformer-based anomaly detection offer new directions:
+
+1. **Zero-Shot Anomaly Detection with CLIP** - Combine DINOv2 visual features with CLIP multimodal embeddings. Text descriptions of defects ("scratches", "dents", "corrosion") generate semantic embeddings without needing labeled defects. Why this works for you: your 12 test defects are insufficient for supervised learning; zero-shot avoids this bottleneck. Expected gain: handles Feature 1 vs Feature 2 differences via semantic descriptions, reduces false positives.
+
+2. **Contrastive Learning (SimCLR/BYOL)** - Self-supervised pretraining on your 720 normal images. Unlike supervised fine-tuning (which overfitted), contrastive learning learns tight normal boundary without degrading generalization. Why this works: you have perfect normal examples but limited defect examples; self-supervised learning is designed for exactly this scenario. Expected gain: tighter normal boundary reduces Images 2-3 false positives.
+
+3. **Multi-Modal Transformer Ensemble** - Ensemble fundamentally different models (DINOv2 for structure, CLIP for semantics, ViT-Adapter for lightweight adaptation). Unlike your failed TTA (which used same model with different seeds), these models have orthogonal strengths. Why this works: different models catch different patterns; voting reduces false positives. Expected gain: more robust than single model, especially on borderline cases.
+
+4. **Transformer Attention for Sparse Features** - Use ViT attention maps to identify semantically important patches. Reduce memory bank from 27,648 to ~5K-10K critical patches via attention-guided pruning. Why this works: memory bank gaps (Images 2-3) suggest coreset has redundant patches; attention identifies truly representative features. Expected gain: denser memory bank, fewer false positives, same/better inference speed.
+
+**Benchmarking Strategy:**
+
+For production validation, benchmark against established datasets:
+- MVTec AD (industrial standard, 15 object categories)
+- VisA (multi-view, more challenging)
+- Evaluate metrics: AUROC (image & pixel), F1-score, inference time (target <30ms GPU)
+- Robustness test: apply to unseen defect types to measure domain generalization
+
+**Which Transformer Approach to Prioritize:**
+- **Short-term (1 week)**: Zero-Shot CLIP + DINOv2 ensemble (low risk, leverages existing models)
+- **Medium-term (1 month)**: Contrastive learning fine-tuning on 720 normals (addresses false positives systematically)
+- **Long-term (3+ months)**: Specialized industrial Vision Transformer pretrained on defect datasets (SOTA for manufacturing)
+
+---
+
+**Legacy Techniques (Comparison Baseline):**
 - **One-class classifiers** - Replace k-NN with learned decision boundary (e.g., Support Vector Data Description)
 - **Generative models** - Reconstruct normal images. Anomaly = reconstruction error (GANomaly approach)
 - **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
