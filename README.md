@@ -362,6 +362,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 4. **Hyperparameter sensitivity** - Coreset ratio and k-neighbors require tuning per dataset
 5. **No temporal context** - Treats images independently. Sequence anomalies (degradation trends) not captured
 6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
+7. **No confidence intervals** - Reported metrics (99.81% AUROC, 36.0894 threshold) lack uncertainty estimates. With only 524 test images (12 defects), a single misclassified defect changes recall from 100% to 91.7%. I could have computed 95% confidence intervals using bootstrapping (resample test set 1000x, recompute AUROC each time) or cross-validation (split data into K folds). However, with limited defects, confidence intervals would be wide, making incremental improvements hard to validate statistically. For production deployment, I would recommend collecting a larger test set (100+ defects) before claiming statistical significance of performance improvements.
 
 ## 12. Potential Room for Improvements
 
