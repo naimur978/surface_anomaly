@@ -17,16 +17,9 @@ This work develops an unsupervised anomaly detection solution for surface defect
    - [6.1 How It Works](#61-how-it-works)
    - [6.2 Why I Chose Patch-Based Approach](#62-why-i-chose-patch-based-approach)
 7. [Key Design Decisions](#7-key-design-decisions)
-   - [7.1 Dataset Strategy](#71-dataset-strategy-unified-vs-separate)
-   - [7.2 Image Size](#72-image-size-224224)
-   - [7.3 Data Augmentation](#73-data-augmentation-none-for-training)
-   - [7.4 ROI Masking](#74-roi-masking)
-   - [7.5 Feature Extractor](#75-feature-extractor-dinov2)
-   - [7.6 Patch Overlap](#76-patch-overlap)
-   - [7.7 Coreset Ratio](#77-coreset-sampling-ratio-015)
-   - [7.8 Indexing Strategy](#78-indexing-strategy-in-memory-k-nn)
-   - [7.9 Number of Neighbors](#79-number-of-neighbors-k9)
-   - [7.10 Threshold Strategy](#710-threshold-strategy-100-recall)
+   - [Assumptions](#assumptions)
+   - [Design Choices](#design-choices)
+   - [Trade-offs](#trade-offs)
 8. [Approaches That Didn't Work](#8-approaches-that-didnt-work)
 9. [Evaluation Metrics](#9-evaluation-metrics)
 10. [Limitations](#10-limitations)
@@ -205,62 +198,34 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 
 ## 7. Key Design Decisions
 
-### 7.1 Dataset Strategy (Unified vs. Separate)
-**Decision:** Combine all feature types (Feature 1 and Feature 2) into a single unified dataset. Store them in the same memory bank.  
-**Rationale:** I tried both approaches separately and combined on my dataset. Both feature types represent normal surface variations of different metal surfaces (same material but different finishes/tolerances). I didn't observe any significant performance drop when combining them into one unified dataset and memory bank. A unified approach learns a general "normal" boundary across both types, simplifying deployment and threshold management. Since combining them didn't hurt performance, I decided to move on with the unified dataset approach.
+### Assumptions
+
+**7.1 Controlled Environment**
+The manufacturing setup operates under controlled conditions: fixed camera, consistent lighting, standardized product placement. No different angles, no dramatic lighting changes, no camera motion. This assumption justifies why I don't use data augmentation and can rely on a tight normal boundary without synthetic bias.
+
+**7.2 Single Unified Dataset**
+Both feature types (Feature 1 and Feature 2) represent normal surface variations of the same material with different finishes/tolerances. I tested both separate and unified approaches on my dataset and found no significant performance drop when combining them. A unified approach learns a general "normal" boundary across both types, simplifying deployment and threshold management.
 
 ![Dataset Strategy Comparison](assets/dataset.png)
 
-**Trade-off:** Risk of mixing feature distributions if the surfaces are too different. Single threshold may not optimize for both types. I would use separate datasets and separate memory banks only if:
-  - The surfaces are made of fundamentally different materials (e.g., textile vs. metal)
-  - Normal patterns diverge significantly
-  - Feature-specific thresholds yield better results in production testing
+### Design Choices
 
+**7.3 Image Size (224×224)**
+**Decision:** Standardize all images to 224×224 pixels.
 
-### 7.2 Image Size (224×224)
-**Decision:** Standardize all images to 224×224 pixels for training and inference.
+**Rationale:** DINOv2 (ViT-B/14) is pretrained on variable sizes (224×224, 448×448, 518×518), while EfficientNet-B4 is pretrained on 380×380. When I downscaled EfficientNet to 224×224, it lost ~7% AUROC. Upscaling to 380×380 would increase computational cost significantly with more patches and longer inference time. I chose 224×224 as a compromise between computational efficiency and model performance, ensuring uniform feature extraction across my varying dataset sizes (243×265 and 301×241).
 
-**Rationale:** I observed that DINOv2 (ViT-B/14) is pretrained on variable input sizes (224×224, 448×448, 518×518), while EfficientNet-B4 is pretrained on 380×380. When I downscaled EfficientNet to 224×224, it lost around 7% in AUROC. One reason I believe this happened is that EfficientNet was not trained on 224×224, so it's operating outside its native training regime. I could have upscaled to 380×380, but that would increase computational cost significantly with more patches and longer inference time. I also checked that choosing 224×224 doesn't force me to lose ROI masking or other preprocessing benefits. Instead, I chose 224×224 as a compromise to balance computational efficiency with model performance. I believe a unified size across both architectures simplifies implementation and allows fair comparison. This approach ensures uniform feature extraction across my dataset with varying image sizes (243×265 and 301×241).
+**Why DINOv2 over DINOv3:** DINOv3 is larger and more resource-intensive. The performance gains didn't justify the overhead for my dataset size. DINOv3's weights were also more prone to overfitting on smaller datasets. Given my computational constraints, DINOv2 proved to be the better choice.
 
-**Why not DINOv3:** I initially tried DINOv3 as well, but it didn't work as well as DINOv2. DINOv3 is larger and more resource-intensive, requiring more memory and computational power. The performance gains didn't justify the overhead for my use case. I also found that DINOv3's pretrained weights were more prone to overfitting on smaller datasets compared to DINOv2. Given my computational constraints and dataset size, DINOv2 proved to be the better choice.
+**7.4 No Data Augmentation**
+**Decision:** Train only on original normal samples without augmentation.
 
-### 7.3 Data Augmentation (None for Training)
-**Decision:** No augmentation on training data. Train only on original normal samples.
+**Rationale:** Given the controlled environment (fixed camera, consistent lighting), augmentation would introduce unrealistic variations that distort the normal boundary. Arbitrary rotations don't reflect test conditions, and aggressive color jitter might make the model insensitive to legitimate defects. Instead, I rely on DINOv2's features, which are naturally robust to subtle shifts due to ImageNet pretraining. This keeps the boundary tight and focused on actual surface anomalies.
 
-**Rationale:** Since the camera is fixed in a controlled manufacturing environment, variations are limited. There are no different angles, no dramatic lighting changes, and no camera motion. The main natural variations that could occur at test time would be:
-- Subtle shifts in lighting (ambient changes, slight shadows)
-- Minor translational shifts (product placement on conveyor)
-- Surface reflections or glare (environmental reflections)
+**7.5 Feature Extractor (DINOv2)**
+**Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14).
 
-I initially considered augmentation (rotations, color jitter, brightness shifts) to make the model robust to these variations. However, I realized that augmentation could introduce unrealistic variations that distort the "normal" boundary in feature space. For example, arbitrary rotations don't reflect actual test conditions, and aggressive color jitter might make the model insensitive to legitimate defect signatures. Instead, I rely on the pre-trained DINOv2 features, which are naturally robust to these subtle environmental shifts due to training on ImageNet's diverse data. This allows me to keep the training boundary tight and focused on actual surface anomalies rather than synthetic variations.
-
-**Trade-off:** I accept that if there are drastic changes (e.g., new lighting setup, different camera angle), the model may not generalize well. However, given the controlled environment assumption, a tight normal boundary without synthetic bias is more valuable than augmentation-induced robustness to unrealistic scenarios.
-
-### 7.4 ROI Masking
-**Decision:** Apply region-of-interest (ROI) mask by setting pixels outside ROI to black (0 intensity). The procedure:
-  - Apply black masking outside the ROI boundary
-  - Pad the masked image to a square (with black padding to maintain aspect ratio)
-  - Scale the square image to 224×224
-
-![ROI Masking Procedure](assets/roi_procedure.png)
-
-**Rationale:** Black masking is chosen based on experimental comparison. I tested three approaches:
-  - No masking
-  - Black masking outside ROI
-  - White masking outside ROI
-
-Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improvement over no masking. My reasoning: black pixels (zero intensity) are treated as legitimate absence of signal in feature extractors, while white pixels may be interpreted as high-intensity noise. Background/borders naturally vary across images and contain irrelevant information. Black masking cleanly eliminates this noise while preserving the product surface, allowing the model to focus on anomalies intrinsic to the surface.
-
-![ROI Masking Comparison](assets/roi.png)
-
-**Trade-off:** Requires manual ROI definition and is inflexible to product shape changes. Black masking assumes the feature extractor handles zero-intensity regions appropriately, which may not hold for all architectures. However, the empirical 3.5% accuracy gain justifies this approach.
-
-**Future Improvement:** The manual ROI masks don't always perfectly match the actual boundary. Sometimes there's misalignment between the mask and the actual boundary. I observe some red heatmap artifacts around the borders, which suggests sensitivity to ROI boundary precision. I could explore: (1) using Segment Anything Model (SAM) for automated ROI refinement with pixel-level precision, or (2) learning an adaptive ROI region based on image features rather than fixed manual masks. This would reduce border artifacts and improve robustness when ROI boundaries don't align perfectly with the actual boundary.
-
-### 7.5 Feature Extractor (DINOv2)
-**Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14) [3] instead of alternatives.  
-**Rationale:** I evaluated three feature extractors on my dataset and found that Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excel at detecting subtle texture anomalies in surface defects, which is critical for my use case. I observed that DINOv2 outperforms both Qwen (another ViT) and ResNet (CNN-based) on AUROC.  
-**Trade-off:** I accept higher computational cost at inference compared to lightweight CNNs, but the superior anomaly sensitivity justifies it.
+**Rationale:** I evaluated three feature extractors and found Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excels at detecting subtle texture anomalies, critical for surface defects.
 
 **Feature Extractor Comparison:**
 
@@ -274,34 +239,56 @@ Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improv
 
 </div>
 
-DINOv2 achieved the best AUROC (96.25%) despite larger model size. The 2.4% improvement over Qwen and 1.4% over ResNet justified the choice for production.
+DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qwen and 1.4% over ResNet.
 
-### 7.6 Patch Overlap
-**Decision:** Use overlapping patches with sliding window.  
-**Rationale:** I observe that overlapping ensures complete spatial coverage and smooth heatmaps without blind spots. I think this is essential for precise anomaly localization.  
-**Trade-off:** I accept increased computational cost due to redundant feature extraction, but I believe it's necessary for the localization accuracy I need.
+**7.6 Number of Neighbors (k=9)**
+**Decision:** Set k=9 for nearest neighbor search.
 
-### 7.7 Coreset Sampling Ratio (0.15)
-**Decision:** Retain 15% of training patches after coreset sampling using random sampling.  
-**Rationale:** Initially, I tried a greedy coreset selection approach for better representativeness. However, it added 321ms to inference time due to expensive nearest-neighbor computations during coreset construction. I switched to simple random sampling (keeping 15% of patches). Surprisingly, not only is this faster, but it also yields better accuracy than greedy sampling. My hypothesis is that random sampling avoids overfitting to specific patterns in the training set, creating a more generalizable normal boundary. This ratio of 0.15 balances memory efficiency with inference speed while achieving the best empirical results.  
-**Trade-off:** Random sampling (15%) theoretically risks losing some important normal patterns compared to more sophisticated greedy or diversity-based methods. However, I'm observing better accuracy and faster inference, so the empirical results outweigh the theoretical concern. In the future, I can experiment with diversity-based coreset methods (e.g., k-center or density-aware sampling) if performance plateaus, but for now random sampling at 0.15 is the empirical winner.
+**Rationale:** Through experimentation on my dataset, k=9 balances sensitivity to anomalies with noise robustness. Smaller k is too noisy; larger k loses sensitivity. k=9 emerged as the empirical sweet spot.
 
-### 7.8 Indexing Strategy (In-Memory k-NN with Euclidean Distance)
-**Decision:** Store coreset patches in memory and use exact k-NN search with torch.cdist using Euclidean (L2) distance.  
-**Rationale:** I want fast inference with guaranteed correctness. My observation is that ~27,648 coreset patches fit comfortably in memory. I use torch.cdist for exact k-NN distances with Euclidean metric, which is simple, interpretable, and GPU-accelerated. I found that exact distances from torch.cdist achieve better scores than approximate methods because there's no quantization error. This is crucial when small distance differences affect the decision boundary. The simplicity also reduces debug complexity and makes results reproducible.  
-**Trade-off:** This is memory-intensive for very large coresets (millions). FAISS GPU indexing could scale better for massive datasets, but I believe the simplicity and accuracy of exact search justifies the memory trade-off for my current scale.
+### Trade-offs
 
-**Distance Metric Comparison:** I also tried Cosine distance (normalized by feature magnitude) as an alternative to Euclidean, thinking it might be more robust to feature scale variations. However, I observed no improvement in AUROC on my dataset. Euclidean distance performed equally well and is slightly faster on GPU, so I stuck with Euclidean.
+**7.7 ROI Masking**
+**Decision:** Apply region-of-interest (ROI) mask by setting pixels outside ROI to black. Procedure:
+  - Apply black masking outside the ROI boundary
+  - Pad the masked image to a square (with black padding)
+  - Scale to 224×224
 
-### 7.9 Number of Neighbors (k=9)
-**Decision:** Set k=9 for nearest neighbor search.  
-**Rationale:** I need to balance two tensions: small k is too noisy, large k loses sensitivity to anomalies. Through experimentation, I found k=9 works well for my specific dataset and recall requirements.  
-**Trade-off:** I've observed higher k gives smoother but less sensitive results. Lower k is more sensitive but noisier. I chose k=9 as the empirical sweet spot for my use case.
+![ROI Masking Procedure](assets/roi_procedure.png)
 
-### 7.10 Threshold Optimization (100% Recall)
+**Rationale:** I tested three approaches: no masking, black masking, and white masking. Black masking achieved 2% improvement over white masking and 3.5% over no masking. Black pixels (zero intensity) are treated as legitimate signal absence by feature extractors, while white may be interpreted as noise. Background/borders are irrelevant; black masking cleanly eliminates this noise.
+
+![ROI Masking Comparison](assets/roi.png)
+
+**Trade-off:** Requires manual ROI definition and is inflexible to product shape changes. Assumes the feature extractor handles zero-intensity regions appropriately. However, the empirical 3.5% accuracy gain justifies this. Manual masks sometimes misalign with boundaries, causing red heatmap artifacts around borders. Future improvement: use Segment Anything Model (SAM) for automated ROI refinement or learn an adaptive ROI based on image features.
+
+**7.8 Patch Overlap**
+**Decision:** Use overlapping patches with sliding window.
+
+**Rationale:** Overlapping ensures complete spatial coverage and smooth heatmaps without blind spots. Essential for precise anomaly localization.
+
+**Trade-off:** Increased computational cost due to redundant feature extraction. But necessary for localization accuracy.
+
+**7.9 Coreset Sampling Ratio (0.15)**
+**Decision:** Retain 15% of training patches using random sampling.
+
+**Rationale:** I initially tried greedy coreset selection for better representativeness, but it added 321ms to inference time. Random sampling (15%) is faster AND yields better accuracy. My hypothesis: random sampling avoids overfitting to training patterns, creating a more generalizable normal boundary.
+
+**Trade-off:** Theoretically, random sampling risks losing important patterns vs. greedy/diversity-based methods. However, empirical results (better accuracy + faster inference) outweigh theory. Future work: explore k-center or density-aware sampling if performance plateaus.
+
+**7.10 Indexing Strategy (In-Memory k-NN with Euclidean Distance)**
+**Decision:** Store coreset patches in memory and use exact k-NN search with torch.cdist using Euclidean (L2) distance.
+
+**Rationale:** ~27,648 coreset patches fit comfortably in memory. torch.cdist provides exact k-NN distances with no quantization error, crucial when small distance differences affect the decision boundary. Simple, interpretable, GPU-accelerated, and reproducible.
+
+**Distance Metric Comparison:** I also tried Cosine distance (normalized by feature magnitude), but found no improvement in AUROC. Euclidean performed equally well and is slightly faster on GPU.
+
+**Trade-off:** Memory-intensive for very large coresets (millions). FAISS GPU indexing could scale better for massive datasets, but simplicity and accuracy of exact search justify the memory trade-off for my current scale.
+
+**7.11 Threshold Optimization (100% Recall)**
 **Decision:** Use 100% recall threshold to catch every defect.
 
-**Rationale:** In manufacturing QA, missing a defect is catastrophic. I propose two thresholds based on different use cases:
+**Rationale:** In manufacturing QA, missing a defect is catastrophic. I propose two thresholds:
 
 1. **99th Percentile (Production Default)**: 36.0894
    - Scores from 99th percentile of training data (normal samples only)
@@ -309,9 +296,9 @@ DINOv2 achieved the best AUROC (96.25%) despite larger model size. The 2.4% impr
    - Balances coverage with reasonable false positive rate
 
 2. **100% Recall Threshold (Industry Practice)**: 36.9051
-   - Derived from validation set: lowest score that achieves 100% recall (zero false negatives)
-   - In practice, I would validate this threshold on a larger test set, then choose whichever optimizes business metrics
-   - This is the approach used in manufacturing: collect test images, measure recall at different thresholds, select the one where recall = 100%
+   - Derived from validation set: lowest score achieving 100% recall (zero false negatives)
+   - In practice, validate on larger test set, then choose whichever optimizes business metrics
+   - This is the manufacturing approach: collect test images, measure recall at different thresholds, select where recall = 100%
    - Accepts false positives as unavoidable; human reviewers filter them
 
 ![Threshold Comparison](assets/threshold_comparison.png)
