@@ -350,13 +350,11 @@ I prioritize 100% recall with my threshold to catch all defects in manufacturing
 
 
 
-DINOv2 outperformed both alternatives, achieving the highest validation AUROC. This justified the selection of DINOv2 as the feature extractor for the final model.
-
 ![ROC Curve](assets/roc_curve.png)
 
-The ROC curve shows a strong L-shaped pattern, with the curve staying close to the top-left corner. This indicates that I can achieve high true positive rates (recall) while maintaining low false positive rates, which is exactly what I wanted for manufacturing QA where catching all defects is critical.
+The ROC curve shows a strong L-shaped pattern, with the curve staying close to the top-left corner. This indicates that I can achieve high true positive rates (recall) while maintaining low false positive rates, which is exactly what I wanted for manufacturing QA where catching all defects is critical. 
 
-The anomaly score distribution shows clear separation between normal and defective samples. Normal images cluster with low scores (left side), while defective images cluster with higher scores (right side). The overlap I observe in the middle is explained in the "False Positives Analysis" below—some normal samples fall into higher score ranges due to memory bank gaps (Images 2 & 3), while some test images with actual defects are mislabeled as normal (Images 1 & 4). Overall, the separation validates that my model learned meaningful anomaly signals.
+On the other hand, the anomaly score distribution shows clear separation between normal and defective samples. Normal images cluster with low scores (left side), while defective images cluster with higher scores (right side). The overlap I observe in the middle is explained in the "False Positives Analysis" below. Some normal samples fall into higher score ranges due to memory bank gaps (Images 2 & 3), while some test images with actual defects are mislabeled as normal (Images 1 & 4). Overall, the separation validates that my model learned meaningful anomaly signals.
 
 ### Inference Performance
 
@@ -423,7 +421,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 
 ## 12. References
 
-[1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD : A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
+[1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD : A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584-9592.
 
 [2] C. Zhou, R. C. Paffenroth, "Anomaly Detection with Robust Deep Autoencoders," in Proceedings of the 23rd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2017.
 
