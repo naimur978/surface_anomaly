@@ -6,22 +6,38 @@ This work is about detecting and localizing surface defects using DINOv2/Efficie
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Expected Output](#expected-output)
-- [My Plan](#my-plan)
-  - [CI/CD Pipeline](#cicd-pipeline)
-  - [Baseline Model Comparison](#baseline-model-comparison)
-- [Problem Interpretation](#problem-interpretation)
-- [Methodology](#methodology)
-- [Key Design Decisions](#key-design-decisions)
-- [Assumptions](#assumptions)
-- [Evaluation Metrics](#evaluation-metrics)
-- [Limitations](#limitations)
-- [Potential Room for Improvements](#potential-room-for-improvements)
-- [References](#references)
+1. [Installation](#1-installation)
+2. [Usage](#2-usage)
+3. [Expected Output](#3-expected-output)
+4. [My Plan](#4-my-plan)
+   - [4.1 CI/CD Pipeline](#41-cicd-pipeline)
+   - [4.2 Baseline Model Comparison](#42-baseline-model-comparison)
+5. [Problem Interpretation](#5-problem-interpretation)
+6. [Methodology](#6-methodology)
+   - [6.1 How It Works](#61-how-it-works)
+   - [6.2 Why I Chose Patch-Based Approach](#62-why-i-chose-patch-based-approach)
+7. [Key Design Decisions](#7-key-design-decisions)
+   - [7.1 Memory Bank Strategy](#71-memory-bank-strategy-unified-vs-separate)
+   - [7.2 Image Size](#72-image-size-224224)
+   - [7.3 Data Augmentation](#73-data-augmentation-none-for-training)
+   - [7.4 ROI Masking](#74-roi-masking)
+   - [7.5 Feature Extractor](#75-feature-extractor-dinov2)
+   - [7.6 Patch Overlap](#76-patch-overlap)
+   - [7.7 Coreset Ratio](#77-coreset-sampling-ratio-01)
+   - [7.8 Indexing Strategy](#78-indexing-strategy-in-memory-k-nn)
+   - [7.9 Number of Neighbors](#79-number-of-neighbors-k9)
+   - [7.10 Threshold Strategy](#710-threshold-strategy-100-recall)
+8. [Assumptions](#8-assumptions)
+9. [Evaluation Metrics](#9-evaluation-metrics)
+10. [Limitations](#10-limitations)
+11. [Potential Room for Improvements](#11-potential-room-for-improvements)
+    - [11.1 Short-term](#111-short-term)
+    - [11.2 Medium-term](#112-medium-term)
+    - [11.3 Long-term](#113-long-term)
+12. [Code Setup Plan](#12-code-setup-plan)
+13. [References](#13-references)
 
-## Installation
+## 1. Installation
 
 1. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
 
@@ -47,7 +63,7 @@ data/
 pip install -r requirements.txt
 ```
 
-## Usage
+## 2. Usage
 
 Open **two terminals** and activate virtual environment in both:
 
@@ -82,7 +98,7 @@ docker build -t surface_anomaly .
 docker run -v $(pwd)/data:/app/data -v $(pwd)/results:/app/results surface_anomaly python scripts/run_pipeline.py config/config.yaml
 ```
 
-## Expected Output
+## 3. Expected Output
 
 The pipeline generates:
 
@@ -105,7 +121,7 @@ results/
     └── surface_anomaly.log                                # Training log
 ```
 
-## My Plan
+## 4. My Plan
 
 I wanted to make this like what I would do in an actual work setup. In DevOps, I can focus on codebase only. But MLOps is tricky because there are 3 key variables for versioning I tried to keep track of in this project:
 
@@ -113,7 +129,7 @@ I wanted to make this like what I would do in an actual work setup. In DevOps, I
 2. **Model Artifacts** - I used MLflow for experiment tracking and model versioning
 3. **Dataset** - Dataset remains similar across experiments, so I didn't use versioning. Otherwise, I would use DVC (Data Version Control)
 
-### CI/CD Pipeline
+### 4.1 CI/CD Pipeline
 
 For continuous integration and deployment, I used:
 - **Unit Testing & Automation** - Automated tests validate model loading, feature extraction, and inference pipelines
@@ -121,13 +137,13 @@ For continuous integration and deployment, I used:
 
 ![GitHub Actions Workflow](assets/github_actions.png)
 
-- **Docker Containerization** - Dockerfile for reproducible deployments; handles CPU inference (GPU support recommended for production)
+- **Docker Containerization** - Dockerfile for reproducible deployments. Handles CPU inference (GPU support recommended for production)
 - **MLflow Experiment Tracking** - Centralized logging of model metrics, parameters, and artifacts:
 
 ![MLflow Tracking](assets/mlflow.png)
 
 
-### Baseline Model Comparison
+### 4.2 Baseline Model Comparison
 
 Initially, I read some recent CVPR papers, but then thought maybe I should start from basic approaches first. I found the **anomalib** library which allowed me to train several algorithms easily. As I used anomalib to train base models, I created the `data/surface/` folder structure following anomalib's documentation. I tried multiple models separately (PaDiM, PatchCore, GANomaly, Autoencoder) which you can find in `baseline_model.ipynb`.
 
@@ -148,12 +164,12 @@ PatchCore seemed better, but that doesn't mean it will be better in the end. How
 
 So I moved on with PatchCore as my core idea, and customized the idea, as I explained below.
 
-## Problem Interpretation
+## 5. Problem Interpretation
 
 **Objective:** Detect and localize surface defects on manufactured items using unsupervised anomaly detection. Images are captured in a controlled manner (fixed camera, consistent lighting, standardized setup) to eliminate environmental variables and focus purely on product surface anomalies.
 
 **Challenge:**
-- **No labeled defect examples** - Training data contains only "normal" samples; we have zero examples of actual defects
+- **No labeled defect examples** - Training data contains only "normal" samples. We have zero examples of actual defects
 - **Unknown defect types** - New defect patterns may appear at inference time that were never seen during training
 - **Subtle anomalies** - Some defects are barely visible as texture variations, not obvious visual flaws
 - **Localization requirement** - Must pinpoint defect location (pixel-level heatmaps), not just classify image as defective
@@ -161,28 +177,81 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 
 **Real-world Context:** This is a **one-class unsupervised classification problem** where my intention is to learn a tight boundary around "normal" samples and flag anything outside as anomalous. In manufacturing, defects reaching customers (false negatives) are catastrophic and costly. In contrast, false positives are acceptable since human reviewers filter them out at minimal cost. Therefore, the priority is **recall**: my plan is to optimize the threshold to catch every defect, even if it means accepting more false alarms. The model must err on the side of caution.
 
-## Methodology
+## 6. Methodology
 
-**Approach:** Patch-based anomaly detection using pre-trained feature extractors (DINOv2/EfficientNet) with k-NN scoring.
+**Approach:** Patch-based anomaly detection. Divide images into overlapping patches, extract features using pre-trained models, build a reference set of normal patches, then score test patches based on deviation from this normal distribution.
 
-1. **Feature Extraction** - Extract deep features from image patches using a pre-trained vision model
-2. **Coreset Selection** - Subsample representative training patches to reduce memory/compute (coreset ratio: 0.1)
-3. **k-NN Scoring** - For each patch, compute anomaly score as distance to k-nearest neighbors in feature space
-4. **Image-level Aggregation** - Combine patch scores to get image-level anomaly score
-5. **Threshold Selection** - Use 100% recall threshold to catch all defects, accepting some false positives
+### 6.1 How It Works
 
-## Key Design Decisions
+1. Extract feature vectors from overlapping image patches using pre-trained models
+2. Store all patch features from normal training data in a memory bank
+3. Subsample the memory bank using coreset selection, keeping only the most representative patches
+4. For test images, extract patch features and compute similarity/distance to the memory bank
+5. Patches with low similarity (high distance) to normal patterns are flagged as anomalous
+6. Map patch-level anomaly scores back to image space to create localization heatmaps
+7. Aggregate patch scores to produce image-level prediction (defect or normal)
 
-| Decision | Rationale |
-|----------|-----------|
-| **DINOv2 backbone** | Vision Transformer features capture fine-grained structural patterns better than CNNs for surface anomalies |
-| **k=9 neighbors** | Balances local context (small k too noisy) vs. generalization (large k loses sensitivity) |
-| **Coreset ratio 0.1** | Reduces training patches from millions to ~100K while preserving patch diversity |
-| **ROI masking** | Focuses on relevant surface area, ignoring background/borders that vary across images |
-| **100% recall threshold** | Prioritizes catching defects; false positives filtered by human reviewers |
-| **Patch overlap** | Sliding window with stride ensures complete coverage for smooth heatmaps |
+### 6.2 Why I Chose Patch-Based Approach
 
-## Assumptions
+I needed localization (spatial heatmaps) not just classification. Patch-based methods provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike autoencoders which rely mostly on fine-tuning. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
+
+## 7. Key Design Decisions
+
+### 7.1 Memory Bank Strategy (Unified vs. Separate)
+**Decision:** Store all feature types (Feature 1 and Feature 2) in a single unified memory bank.  
+**Rationale:** I tried both approaches separately and combined on my dataset. Both feature types represent normal surface variations of different metal surfaces. I didn't observe any significant performance drop when combining them into a unified memory bank. A unified memory bank learns a general "normal" boundary across both types, simplifying deployment and threshold management. Since combining them didn't hurt my model's performance, I decided to move on with the unified dataset approach.  
+**Trade-off:** Risk of mixing feature distributions if they are too different. Single threshold may not optimize for both types. I would use separate memory banks only if:
+  - The surfaces are made of fundamentally different materials (e.g., textile vs. metal)
+  - Normal patterns diverge significantly
+  - Feature-specific thresholds yield better results in production testing
+
+
+### 7.2 Image Size (224×224)
+**Decision:** Standardize all images to 224×224 pixels.  
+**Rationale:** I chose this because it matches pre-trained model input dimensions (DINOv2 expects 224×224). I found it simplifies batch processing and feature extraction.  
+**Trade-off:** Resizing may lose fine-grained details for very high-resolution defects, but I believe maintaining consistency and computational efficiency is more important.
+
+### 7.3 Data Augmentation (None for Training)
+**Decision:** No augmentation on training data. Train only on original normal samples.  
+**Rationale:** I reason that training data is "normal only". Artificial augmentation could introduce unrealistic variations that distort the normal boundary in feature space. I want to avoid synthetic bias.  
+**Trade-off:** I accept losing robustness to lighting/angle variations at test time, but I believe maintaining a tight normal boundary without synthetic bias is more critical.
+
+### 7.4 ROI Masking
+**Decision:** Apply region-of-interest (ROI) mask to focus on surface area only.  
+**Rationale:** I observed that background/borders vary across images. Masking eliminates this noise, allowing the model to focus on what matters: product surface anomalies. My observation is that this significantly improves signal-to-noise ratio.  
+**Trade-off:** This requires manual ROI definition and is inflexible to product shape changes, but I believe the improved signal-to-noise justifies it.
+
+### 7.5 Feature Extractor (DINOv2)
+**Decision:** Use Vision Transformer-based features (DINOv2) instead of CNN-based features.  
+**Rationale:** I found that Vision Transformers capture fine-grained structural patterns better than CNNs. My observation is they excel at detecting subtle texture anomalies in surface defects, which is critical for my use case.  
+**Trade-off:** I accept higher computational cost at inference compared to lightweight CNNs, but I believe better anomaly sensitivity justifies it.
+
+### 7.6 Patch Overlap
+**Decision:** Use overlapping patches with sliding window.  
+**Rationale:** I observe that overlapping ensures complete spatial coverage and smooth heatmaps without blind spots. I think this is essential for precise anomaly localization.  
+**Trade-off:** I accept increased computational cost due to redundant feature extraction, but I believe it's necessary for the localization accuracy I need.
+
+### 7.7 Coreset Sampling Ratio (0.1)
+**Decision:** Retain 10% of training patches after coreset sampling.  
+**Rationale:** I need to reduce memory and computation from millions of patches to ~100K for practical deployment. I believe coreset algorithms preserve the most representative samples while maintaining anomaly detection capability.  
+**Trade-off:** Aggressive sampling (10%) risks losing important normal patterns, but I think modern coreset selection is smart enough to capture the essential distribution.
+
+### 7.8 Indexing Strategy (In-Memory k-NN)
+**Decision:** Store coreset patches in memory and use exact k-NN search.  
+**Rationale:** I want fast inference with guaranteed correctness. My observation is that ~100K coreset patches fit comfortably in memory, and I prefer the simplicity and interpretability of exact search over approximate methods.  
+**Trade-off:** I acknowledge this is memory-intensive for very large coresets (millions). Approximate methods (FAISS, LSH) could scale better, but I believe added complexity isn't worth it for my current scale.
+
+### 7.9 Number of Neighbors (k=9)
+**Decision:** Set k=9 for nearest neighbor search.  
+**Rationale:** I need to balance two tensions: small k is too noisy, large k loses sensitivity to anomalies. Through experimentation, I found k=9 works well for my specific dataset and recall requirements.  
+**Trade-off:** I've observed higher k gives smoother but less sensitive results. Lower k is more sensitive but noisier. I chose k=9 as the empirical sweet spot for my use case.
+
+### 7.10 Threshold Strategy (100% Recall)
+**Decision:** Use 100% recall threshold to catch every defect.  
+**Rationale:** I believe in manufacturing, missing a defect is catastrophic and unacceptable. My observation is that false positives are acceptable since human reviewers can filter them out. I prioritize recall above all else.  
+**Trade-off:** I accept high false positive rate as the necessary cost, but I gain the guarantee of zero false negatives. No defective products slip through.
+
+## 8. Assumptions
 
 1. **Normal training samples are representative** - Training set contains diverse normal variations (lighting, angles, surface texture)
 2. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
@@ -190,7 +259,7 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 4. **Threshold is stable** - 100% recall on validation generalizes to test set
 5. **No label noise** - Training data correctly labeled as normal (critical for unsupervised methods)
 
-## Evaluation Metrics
+## 9. Evaluation Metrics
 
 | Metric | Purpose | Target |
 |--------|---------|--------|
@@ -200,36 +269,36 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 | **F2 Score** | Recall-weighted (catch defects > precision) | > 0.80 |
 | **Confusion Matrix** | TP/FP/TN/FN breakdown for business analysis | Low FN rate |
 
-## Limitations
+## 10. Limitations
 
-1. **Limited training diversity** - Model trained on 1-2 surface types; may not generalize to new defect patterns
-2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity; rare/subtle defects may be missed
+1. **Limited training diversity** - Model trained on 1-2 surface types. May not generalize to new defect patterns
+2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity. Rare/subtle defects may be missed
 3. **Computational cost** - Feature extraction + k-NN search slow for high-resolution images at inference time
 4. **Hyperparameter sensitivity** - Coreset ratio and k-neighbors require tuning per dataset
-5. **No temporal context** - Treats images independently; sequence anomalies (degradation trends) not captured
+5. **No temporal context** - Treats images independently. Sequence anomalies (degradation trends) not captured
 6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
 
-## Potential Room for Improvements
+## 11. Potential Room for Improvements
 
-### Short-term
+### 11.1 Short-term
 - **Adaptive thresholding** - Learn per-image or per-defect-type thresholds instead of global threshold
 - **Ensemble methods** - Combine multiple backbones (DINOv2 + EfficientNet) for robustness
 - **Hard negative mining** - Focus training on borderline false positives to tighten decision boundary
 
-### Medium-term
+### 11.2 Medium-term
 - **Fine-tuning** - Adapt pre-trained features with contrastive learning on domain-specific data
 - **Hierarchical k-NN** - Multi-scale patch analysis (local + global context) for better localization
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
-### Long-term
+### 11.3 Long-term
 - **One-class classifiers** - Replace k-NN with learned decision boundary (e.g., Support Vector Data Description)
-- **Generative models** - Reconstruct normal images; anomaly = reconstruction error (GANomaly approach)
+- **Generative models** - Reconstruct normal images. Anomaly = reconstruction error (GANomaly approach)
 - **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
 - **Active learning** - Iteratively select hard examples for human labeling to improve model
 
-## Code Setup Plan
+## 12. Code Setup Plan
 
-## References
+## 13. References
 
 [1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
 
