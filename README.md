@@ -238,13 +238,14 @@ Note: subject-based thresholding (separate thresholds per feature type) could be
 
 | Extractor | Architecture | AUROC | Model Size |
 |-----------|--------------|-------|-----------|
+| DINOv3 | Vision Transformer (ViT-B/14) | 0.9711 | ~370 MB |
 | **DINOv2** | Vision Transformer (ViT-B/14) | **0.9625** | 330 MB |
 | Qwen | Vision Transformer | 0.9388 | ~380 MB |
 | ResNet | CNN (ResNet-50) | 0.9487 | 103 MB |
 
 </div>
 
-DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qwen and 1.4% over ResNet.
+While DINOv3 achieved a slightly higher AUROC (0.9711), it is larger and more resource-intensive, requiring more memory and computational power. DINOv2 (0.9625 AUROC) provides excellent performance with lower computational overhead. The 0.86% performance trade-off is justified by significant savings in model size, inference speed, and memory consumption. For production deployment with my computational constraints, DINOv2's efficiency gains outweigh DINOv3's marginal accuracy improvement.
 
 **7.6 Number of Neighbors (k=9)**
 
