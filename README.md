@@ -370,9 +370,9 @@ On the other hand, the anomaly score distribution shows clear separation between
 
 GPU inference is ~10x faster than CPU. 
 
-> **GPU Warmup:** I performed GPU warmup runs before measuring to ensure GPU memory is allocated and caches are warmed up, which is crucial for accurately tracking real inference time.
+> **GPU Warmup:** I performed GPU warmup runs before measuring to ensure GPU memory is allocated and caches are warmed up, which I think is crucial for accurately tracking real inference time.
 
-This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
+
 
 ### False Positives Analysis
 
@@ -380,7 +380,7 @@ This validates the importance of GPU acceleration and efficient design choices (
 
 Out of 524 normal test images, I observed 4 false positives flagged as defective. Analysis:
 
-**Images 1 & 4 (Visually Faulty)**: Both appear to have actual surface defects. Image 1 shows blurry reflections/hazy regions suggesting salt-and-pepper noise or blob artifacts. Image 4 exhibits clear visual defects. These may represent test set mislabeling rather than true false positives. I initially tried manual tuning to exclude Image 1 as noise, but this degraded generalization performance on other images, so I accepted the model's classification as fair.
+**Images 1 & 4 (Visually Faulty)**: Both appear to have actual surface defects and deserve to be flagged as positives. Image 1 shows blurry reflections/hazy regions that could be contour distortions, black hat morphology artifacts, or salt-and-pepper noise. I tried morphological filtering approaches (contour detection, black hat transforms, blob filtering) to identify and remove these artifacts, but none improved the model's ability to distinguish them from real defects. Image 4 exhibits clear visual defects. Rather than exclude these images through post-processing heuristics, I accepted the model's classification as correct—these are likely legitimate anomalies or test set labeling issues, not true false positives.
 
 **Images 2 & 3 (Memory Bank Gaps)**: Represent a systematic issue where the random 0.15 coreset sample doesn't adequately represent certain legitimate surface patterns. Subtle texture variations in these regions score high despite being normal. I attempted to address this through coreset ratio adjustment, but any tuning that reduced these false positives also degraded recall on true defects, forcing me to prioritize the recall objective.
 
