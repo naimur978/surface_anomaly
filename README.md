@@ -213,6 +213,7 @@ Note: subject-based thresholding (separate thresholds per feature type) could be
 ### Design Choices
 
 **7.3 Image Size (224×224)**
+
 **Decision:** Standardize all images to 224×224 pixels.
 
 **Rationale:** DINOv2 (ViT-B/14) is pretrained on variable sizes (224×224, 448×448, 518×518), while EfficientNet-B4 is pretrained on 380×380. When I downscaled EfficientNet to 224×224, it lost ~7% AUROC. Upscaling to 380×380 would increase computational cost significantly with more patches and longer inference time. I chose 224×224 as a compromise between computational efficiency and model performance, ensuring uniform feature extraction across my varying dataset sizes (243×265 and 301×241).
@@ -220,11 +221,13 @@ Note: subject-based thresholding (separate thresholds per feature type) could be
 **Why DINOv2 over DINOv3:** DINOv3 is larger and more resource-intensive. The performance gains didn't justify the overhead for my dataset size. DINOv3's weights were also more prone to overfitting on smaller datasets. Given my computational constraints, DINOv2 proved to be the better choice.
 
 **7.4 No Data Augmentation**
+
 **Decision:** Train only on original normal samples without augmentation.
 
 **Rationale:** Given the controlled environment (fixed camera, consistent lighting), augmentation would introduce unrealistic variations that distort the normal boundary. Arbitrary rotations don't reflect test conditions, and aggressive color jitter might make the model insensitive to legitimate defects. Instead, I rely on DINOv2's features, which are naturally robust to subtle shifts due to ImageNet pretraining. This keeps the boundary tight and focused on actual surface anomalies.
 
 **7.5 Feature Extractor (DINOv2)**
+
 **Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14).
 
 **Rationale:** I evaluated three feature extractors and found Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excels at detecting subtle texture anomalies, critical for surface defects.
@@ -244,6 +247,7 @@ Note: subject-based thresholding (separate thresholds per feature type) could be
 DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qwen and 1.4% over ResNet.
 
 **7.6 Number of Neighbors (k=9)**
+
 **Decision:** Set k=9 for nearest neighbor search.
 
 **Rationale:** Through experimentation on my dataset, k=9 balances sensitivity to anomalies with noise robustness. Smaller k is too noisy; larger k loses sensitivity. k=9 emerged as the empirical sweet spot.
