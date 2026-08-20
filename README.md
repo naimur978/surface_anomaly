@@ -9,7 +9,7 @@ This work is about detecting and localizing surface defects using DINOv2/Efficie
 1. [Installation](#1-installation)
 2. [Usage](#2-usage)
 3. [Expected Output](#3-expected-output)
-4. [Experimental Setup](#4-experimental-setup)
+4. [My Plan for Experimental Setup](#4-my-plan-for-experimental-setup)
    - [4.1 CI/CD Pipeline](#41-cicd-pipeline)
    - [4.2 Baseline Model Comparison](#42-baseline-model-comparison)
 5. [Problem Interpretation](#5-problem-interpretation)
@@ -120,7 +120,7 @@ results/
     └── surface_anomaly.log                                # Training log
 ```
 
-## 4. Experimental Setup
+## 4. My Plan for Experimental Setup
 
 I wanted to make this like what I would do in an actual work setup. In DevOps, I can focus on codebase only. But MLOps is tricky because there are 3 key variables for versioning I tried to keep track of in this project:
 
