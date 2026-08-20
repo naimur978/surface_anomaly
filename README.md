@@ -129,7 +129,7 @@ results/
 
 ## 4. My Plan for Experimental Setup
 
-I wanted to make this like what I would do in an actual work setup. In DevOps, I can focus on codebase only. But MLOps is tricky because there are 3 key variables for versioning I tried to keep track of in this project:
+I structured this project following MLOps best practices to mimic a production-ready setup. Unlike traditional DevOps where versioning focuses on code, MLOps requires tracking three distinct dimensions. I implemented versioning strategies for each:
 
 1. **Codebase** - I used Git/GitHub with GitFlow for version control 
 2. **Model Artifacts** - I used MLflow for experiment tracking and model versioning
