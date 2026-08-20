@@ -308,11 +308,15 @@ During development, I experimented with several techniques that either didn't im
 
 ### Results on Surface Dataset
 
+<div align="center">
+
 | Metric | Value |
 |--------|-------|
 | **AUROC (Image-level)** | 0.9981 (99.81%) |
 | **AUROC (Pixel-level)** | 0.8898 (88.98%) |
 | **Decision Threshold** | 36.0894 |
+
+</div>
 
 The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. This means the model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that the DINOv2 features capture surface defects very effectively. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
 
@@ -320,10 +324,14 @@ The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, dem
 
 ### Inference Performance
 
+<div align="center">
+
 | Device | Mean (ms) | Std Dev (ms) | Min (ms) | Max (ms) |
 |--------|-----------|-------------|----------|----------|
 | GPU    | 28.94     | 0.83        | 27.28    | 29.78    |
 | CPU    | 295.21    | 6.23        | 286.33   | 306.66   |
+
+</div>
 
 GPU inference is ~10x faster than CPU. This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
 
@@ -366,9 +374,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
 - **Active learning** - Iteratively select hard examples for human labeling to improve model
 
-## 13. Code Setup Plan
-
-## 14. References
+## 13. References
 
 [1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
 
