@@ -255,9 +255,23 @@ Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improv
 **Future Improvement:** The manual ROI masks don't always perfectly match the actual boundary. Sometimes there's misalignment between the mask and the actual boundary. I observe some red heatmap artifacts around the borders, which suggests sensitivity to ROI boundary precision. I could explore: (1) using Segment Anything Model (SAM) for automated ROI refinement with pixel-level precision, or (2) learning an adaptive ROI region based on image features rather than fixed manual masks. This would reduce border artifacts and improve robustness when ROI boundaries don't align perfectly with the actual boundary.
 
 ### 7.5 Feature Extractor (DINOv2)
-**Decision:** Use Vision Transformer-based features (DINOv2) instead of CNN-based features.  
-**Rationale:** I found that Vision Transformers capture fine-grained structural patterns better than CNNs. My observation is they excel at detecting subtle texture anomalies in surface defects, which is critical for my use case.  
-**Trade-off:** I accept higher computational cost at inference compared to lightweight CNNs, but I believe better anomaly sensitivity justifies it.
+**Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14) instead of alternatives.  
+**Rationale:** I evaluated three feature extractors on my dataset and found that Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excel at detecting subtle texture anomalies in surface defects, which is critical for my use case. I observed that DINOv2 outperforms both Qwen (another ViT) and ResNet (CNN-based) on AUROC.  
+**Trade-off:** I accept higher computational cost at inference compared to lightweight CNNs, but the superior anomaly sensitivity justifies it.
+
+**Feature Extractor Comparison:**
+
+<div align="center">
+
+| Extractor | Architecture | AUROC | Model Size |
+|-----------|--------------|-------|-----------|
+| **DINOv2** | Vision Transformer (ViT-B/14) | **0.9625** | 330 MB |
+| Qwen | Vision Transformer | 0.9388 | ~380 MB |
+| ResNet | CNN (ResNet-50) | 0.9487 | 103 MB |
+
+</div>
+
+DINOv2 achieved the best AUROC (96.25%) despite larger model size. The 2.4% improvement over Qwen and 1.4% over ResNet justified the choice for production.
 
 ### 7.6 Patch Overlap
 **Decision:** Use overlapping patches with sliding window.  
@@ -335,7 +349,21 @@ During development, I experimented with several techniques that either didn't im
 
 </div>
 
-The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. This means the model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that the DINOv2 features capture surface defects very effectively. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
+The model achieves 99.81% image-level AUROC with DINOv2, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. This means the model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that DINOv2 features capture surface defects very effectively. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
+
+**Feature Extractor Performance on Test Set:**
+
+<div align="center">
+
+| Extractor | Validation AUROC | Test AUROC |
+|-----------|------------------|-----------|
+| **DINOv2 (final)** | 0.9625 | **0.9981** |
+| Qwen | 0.9388 | 0.9524 |
+| ResNet | 0.9487 | 0.9612 |
+
+</div>
+
+DINOv2 shows consistent improvement from validation to test (96.25% → 99.81%), suggesting good generalization. The gap widens on test set: DINOv2 outperforms ResNet by 3.7% and Qwen by 4.6% in final AUROC.
 
 ![ROC Curve](assets/roc_curve.png)
 
