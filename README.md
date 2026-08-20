@@ -348,21 +348,13 @@ My pixel-level AUROC is lower at 88.98% because manual ROI masks sometimes misal
 
 I prioritize 100% recall with my threshold to catch all defects in manufacturing QA.
 
-**Feature Extractor Comparison (Validation AUROC):**
 
-<div align="center">
-
-| Extractor | Validation AUROC |
-|-----------|------------------|
-| **DINOv2** | **0.9625** |
-| ResNet | 0.9487 |
-| Qwen | 0.9388 |
-
-</div>
 
 DINOv2 outperformed both alternatives, achieving the highest validation AUROC. This justified the selection of DINOv2 as the feature extractor for the final model.
 
 ![ROC Curve](assets/roc_curve.png)
+
+The ROC curve shows a strong L-shaped pattern, with the curve staying close to the top-left corner. This indicates that I can achieve high true positive rates (recall) while maintaining low false positive rates, which is exactly what I wanted for manufacturing QA where catching all defects is critical.
 
 ### Inference Performance
 
