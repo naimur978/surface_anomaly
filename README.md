@@ -390,7 +390,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 
 1. **Limited training diversity** - Model trained on 1-2 surface types. May not generalize to new defect patterns
 2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity. Rare/subtle defects may be missed
-3. **Computational cost** - Feature extraction + k-NN search slow for high-resolution images at inference time
+3. **Computational cost** - Current approach uses efficient 224×224 resolution and random coreset sampling to keep costs low. However, computational complexity would be prohibitively high if I used greedy coreset selection (O(n²) complexity, adding 321ms overhead) or high-resolution images (more patches to process). Transformer-based feature extractors also add overhead. These design choices trade some potential accuracy for practical inference speed.
 4. **Hyperparameter sensitivity** - Coreset ratio and k-neighbors require tuning per dataset
 5. **No temporal context** - Treats images independently. Sequence anomalies (degradation trends) not captured
 6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
