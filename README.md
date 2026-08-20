@@ -310,6 +310,22 @@ While DINOv3 achieved a slightly higher AUROC (0.9711), it is larger and more re
 
 **Trade-off:** I accept higher false positive rate as the necessary cost to guarantee zero false negatives. No defective products slip through.
 
+### Potential Alternatives to Explore
+
+While the current approach works well for my use case, several alternatives could be explored for future improvements or different scenarios:
+
+1. **Subject-Based Thresholding** - Separate thresholds per feature type (Feature 1 and Feature 2) instead of a unified threshold. This could optimize each surface type individually if their defect characteristics diverge significantly with more data.
+
+2. **Adaptive ROI with SAM** - Replace manual ROI masks with Segment Anything Model (SAM) for automated, pixel-level ROI refinement. This would reduce manual annotation effort and improve robustness when ROI boundaries don't align perfectly with the actual product edge.
+
+3. **Diversity-Based Coreset Sampling** - Explore k-center or density-aware coreset methods instead of random sampling. These could better preserve important normal pattern variations, potentially improving accuracy if the current random approach plateaus.
+
+4. **Approximate Nearest Neighbor Search (FAISS)** - Investigate FAISS GPU indexing with product quantization for scenarios with millions of coreset patches. This would scale beyond current in-memory k-NN limitations while potentially sacrificing some accuracy for speed.
+
+5. **Continuous Model Monitoring** - Implement concept drift detection (e.g., ADWIN statistical testing) to monitor if the model's performance degrades over time as manufacturing conditions or product batches change. This would trigger retraining or threshold adjustment automatically.
+
+6. **Ensemble with DINOv3** - Create an ensemble combining DINOv2 (0.9625 AUROC) and DINOv3 (0.9711 AUROC). While DINOv3 is more expensive computationally, an ensemble could push accuracy higher for critical QA scenarios if latency permits.
+
 ## 8. Approaches That Didn't Work
 
 During development, I experimented with several techniques that either didn't improve performance or increased complexity without benefit:
