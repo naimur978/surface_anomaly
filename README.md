@@ -204,7 +204,7 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 The manufacturing setup operates under controlled conditions: fixed camera, consistent lighting, standardized product placement. No different angles, no dramatic lighting changes, no camera motion. This assumption justifies why I don't use data augmentation and can rely on a tight normal boundary without synthetic bias.
 
 **7.2 Single Unified Dataset**
-Both feature types (Feature 1 and Feature 2) represent normal surface variations of the same material with different finishes/tolerances. I tested both separate and unified approaches on my dataset and found no significant performance drop when combining them. A unified approach learns a general "normal" boundary across both types, simplifying deployment and threshold management.
+Both feature types (Feature 1 and Feature 2) represent normal surface variations of the same material with different finishes/tolerances. I tested both separate and unified approaches on my dataset and found no significant performance drop when combining them. A unified approach learns a general "normal" boundary across both types, simplifying deployment and threshold management. Note: subject-based thresholding (separate thresholds per feature type) could be implemented to optimize each type individually, but I haven't done that in this version since the unified approach already achieves good performance.
 
 ![Dataset Strategy Comparison](assets/dataset.png)
 
