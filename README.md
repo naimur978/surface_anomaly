@@ -187,7 +187,7 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 
 ## 6. Methodology
 
-**Approach:** Patch-based anomaly detection. Divide images into overlapping patches, extract features using pre-trained models, build a reference set of normal patches, then score test patches based on deviation from this normal distribution.
+**Approach:** I got the core idea from PatchCore but updated it in my own ways. The approach divides images into overlapping patches, extracts features using pre-trained models, builds a reference set of normal patches, then scores test patches based on deviation from this normal distribution. The key customizations and design choices are detailed in Section 7.
 
 ### 6.1 How It Works
 
