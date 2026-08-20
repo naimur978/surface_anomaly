@@ -413,7 +413,10 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vs. your failed TTA which lacked model diversity).
 - **Transformer Attention for Sparse Features** - Reduce memory bank to 5K-10K critical patches via ViT attention pruning.
 - **Benchmarking on MVTec AD & VisA** - Validate generalization beyond your specific surface type. Measure AUROC (image & pixel), F1-score, inference time (<30ms GPU target).
-- **Priority:** Start with Zero-Shot CLIP (low risk) → Contrastive Learning (medium risk) → Industrial ViT fine-tuning (long-term SOTA).
+- **Synthetic Defect Generation (Flux Schnell)** - Generate 200+ synthetic defects using Flux Schnell (~1 sec/image) with text prompts ("scratched metal", "dented steel", "corroded surface"). Addresses severe data imbalance: Feature 1 has only 2 defects; synthetic generation creates 50+ per type. Enables per-defect-type threshold tuning (Section 12.1) and robustness validation on unseen defect patterns.
+- **ControlNet Inpainting** - Advanced approach: inpaint synthetic defects onto your 720 real normal images maintaining photorealistic lighting/shadows. Creates training pairs for contrastive learning (Section 12.2). Trade-off: 2-4 sec/image vs 1 sec Flux Schnell, but higher photorealism.
+- **CycleGAN Domain Adaptation** - Generate defects on generic surfaces → adapt to your specific material properties via CycleGAN (~100ms inference). Best for continuous deployment. Trade-off: requires 2-3 hours upfront training.
+- **Priority:** Start with Flux Schnell (fast, immediate data) → ControlNet (production-grade quality) → CycleGAN (long-term deployment).
 
 ## 12. References
 
