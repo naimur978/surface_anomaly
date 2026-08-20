@@ -17,19 +17,20 @@ This work is about detecting and localizing surface defects using DINOv2/Efficie
    - [6.1 How It Works](#61-how-it-works)
    - [6.2 Why I Chose Patch-Based Approach](#62-why-i-chose-patch-based-approach)
 7. [Key Design Decisions](#7-key-design-decisions)
-   - [7.1 Memory Bank Strategy](#71-memory-bank-strategy-unified-vs-separate)
+   - [7.1 Dataset Strategy](#71-dataset-strategy-unified-vs-separate)
    - [7.2 Image Size](#72-image-size-224224)
    - [7.3 Data Augmentation](#73-data-augmentation-none-for-training)
    - [7.4 ROI Masking](#74-roi-masking)
    - [7.5 Feature Extractor](#75-feature-extractor-dinov2)
    - [7.6 Patch Overlap](#76-patch-overlap)
-   - [7.7 Coreset Ratio](#77-coreset-sampling-ratio-01)
+   - [7.7 Coreset Ratio](#77-coreset-sampling-ratio-015)
    - [7.8 Indexing Strategy](#78-indexing-strategy-in-memory-k-nn)
    - [7.9 Number of Neighbors](#79-number-of-neighbors-k9)
    - [7.10 Threshold Strategy](#710-threshold-strategy-100-recall)
-8. [Assumptions](#8-assumptions)
-9. [Evaluation Metrics](#9-evaluation-metrics)
-10. [Limitations](#10-limitations)
+8. [Approaches That Didn't Work](#8-approaches-that-didnt-work)
+9. [Assumptions](#9-assumptions)
+10. [Evaluation Metrics](#10-evaluation-metrics)
+11. [Limitations](#11-limitations)
 11. [Potential Room for Improvements](#11-potential-room-for-improvements)
     - [11.1 Short-term](#111-short-term)
     - [11.2 Medium-term](#112-medium-term)
@@ -197,19 +198,24 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 
 ## 7. Key Design Decisions
 
-### 7.1 Memory Bank Strategy (Unified vs. Separate)
-**Decision:** Store all feature types (Feature 1 and Feature 2) in a single unified memory bank.  
-**Rationale:** I tried both approaches separately and combined on my dataset. Both feature types represent normal surface variations of different metal surfaces. I didn't observe any significant performance drop when combining them into a unified memory bank. A unified memory bank learns a general "normal" boundary across both types, simplifying deployment and threshold management. Since combining them didn't hurt my model's performance, I decided to move on with the unified dataset approach.  
-**Trade-off:** Risk of mixing feature distributions if they are too different. Single threshold may not optimize for both types. I would use separate memory banks only if:
+### 7.1 Dataset Strategy (Unified vs. Separate)
+**Decision:** Combine all feature types (Feature 1 and Feature 2) into a single unified dataset. Store them in the same memory bank.  
+**Rationale:** I tried both approaches separately and combined on my dataset. Both feature types represent normal surface variations of different metal surfaces (same material but different finishes/tolerances). I didn't observe any significant performance drop when combining them into one unified dataset and memory bank. A unified approach learns a general "normal" boundary across both types, simplifying deployment and threshold management. Since combining them didn't hurt performance, I decided to move on with the unified dataset approach.
+
+![Dataset Strategy Comparison](assets/dataset.png)
+
+**Trade-off:** Risk of mixing feature distributions if the surfaces are too different. Single threshold may not optimize for both types. I would use separate datasets and separate memory banks only if:
   - The surfaces are made of fundamentally different materials (e.g., textile vs. metal)
   - Normal patterns diverge significantly
   - Feature-specific thresholds yield better results in production testing
 
 
 ### 7.2 Image Size (224×224)
-**Decision:** Standardize all images to 224×224 pixels.  
-**Rationale:** I chose this because it matches pre-trained model input dimensions (DINOv2 expects 224×224). I found it simplifies batch processing and feature extraction.  
-**Trade-off:** Resizing may lose fine-grained details for very high-resolution defects, but I believe maintaining consistency and computational efficiency is more important.
+**Decision:** Standardize all images to 224×224 pixels for training and inference.
+
+**Rationale:** I observed that DINOv2 (ViT-B/14) is pretrained on variable input sizes (224×224, 448×448, 518×518), while EfficientNet-B4 is pretrained on 380×380. When I downscaled EfficientNet to 224×224, it lost around 7% in AUROC. One reason I believe this happened is that EfficientNet was not trained on 224×224, so it's operating outside its native training regime. I could have upscaled to 380×380, but that would increase computational cost significantly with more patches and longer inference time. I also checked that choosing 224×224 doesn't force me to lose ROI masking or other preprocessing benefits. Instead, I chose 224×224 as a compromise to balance computational efficiency with model performance. I believe a unified size across both architectures simplifies implementation and allows fair comparison. This approach ensures uniform feature extraction across my dataset with varying image sizes (243×265 and 301×241).
+
+**Why not DINOv3:** I initially tried DINOv3 as well, but it didn't work as well as DINOv2. DINOv3 is larger and more resource-intensive, requiring more memory and computational power. The performance gains didn't justify the overhead for my use case. I also found that DINOv3's pretrained weights were more prone to overfitting on smaller datasets compared to DINOv2. Given my computational constraints and dataset size, DINOv2 proved to be the better choice.
 
 ### 7.3 Data Augmentation (None for Training)
 **Decision:** No augmentation on training data. Train only on original normal samples.  
@@ -217,9 +223,25 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 **Trade-off:** I accept losing robustness to lighting/angle variations at test time, but I believe maintaining a tight normal boundary without synthetic bias is more critical.
 
 ### 7.4 ROI Masking
-**Decision:** Apply region-of-interest (ROI) mask to focus on surface area only.  
-**Rationale:** I observed that background/borders vary across images. Masking eliminates this noise, allowing the model to focus on what matters: product surface anomalies. My observation is that this significantly improves signal-to-noise ratio.  
-**Trade-off:** This requires manual ROI definition and is inflexible to product shape changes, but I believe the improved signal-to-noise justifies it.
+**Decision:** Apply region-of-interest (ROI) mask by setting pixels outside ROI to black (0 intensity). The procedure:
+  - Apply black masking outside the ROI boundary
+  - Pad the masked image to a square (with black padding to maintain aspect ratio)
+  - Scale the square image to 224×224
+
+![ROI Masking Procedure](assets/roi_procedure.png)
+
+**Rationale:** Black masking is chosen based on experimental comparison. I tested three approaches:
+  - No masking
+  - Black masking outside ROI
+  - White masking outside ROI
+
+Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improvement over no masking. My reasoning: black pixels (zero intensity) are treated as legitimate absence of signal in feature extractors, while white pixels may be interpreted as high-intensity noise. Background/borders naturally vary across images and contain irrelevant information. Black masking cleanly eliminates this noise while preserving the product surface, allowing the model to focus on anomalies intrinsic to the surface.
+
+![ROI Masking Comparison](assets/roi.png)
+
+**Trade-off:** Requires manual ROI definition and is inflexible to product shape changes. Black masking assumes the feature extractor handles zero-intensity regions appropriately, which may not hold for all architectures. However, the empirical 3.5% accuracy gain justifies this approach.
+
+**Future Improvement:** The manual ROI masks don't always perfectly match the actual boundary. Sometimes there's misalignment between the mask and the actual boundary. I observe some red heatmap artifacts around the borders, which suggests sensitivity to ROI boundary precision. I could explore: (1) using Segment Anything Model (SAM) for automated ROI refinement with pixel-level precision, or (2) learning an adaptive ROI region based on image features rather than fixed manual masks. This would reduce border artifacts and improve robustness when ROI boundaries don't align perfectly with the actual boundary.
 
 ### 7.5 Feature Extractor (DINOv2)
 **Decision:** Use Vision Transformer-based features (DINOv2) instead of CNN-based features.  
@@ -231,15 +253,15 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 **Rationale:** I observe that overlapping ensures complete spatial coverage and smooth heatmaps without blind spots. I think this is essential for precise anomaly localization.  
 **Trade-off:** I accept increased computational cost due to redundant feature extraction, but I believe it's necessary for the localization accuracy I need.
 
-### 7.7 Coreset Sampling Ratio (0.1)
-**Decision:** Retain 10% of training patches after coreset sampling.  
-**Rationale:** I need to reduce memory and computation from millions of patches to ~100K for practical deployment. I believe coreset algorithms preserve the most representative samples while maintaining anomaly detection capability.  
-**Trade-off:** Aggressive sampling (10%) risks losing important normal patterns, but I think modern coreset selection is smart enough to capture the essential distribution.
+### 7.7 Coreset Sampling Ratio (0.15)
+**Decision:** Retain 15% of training patches after coreset sampling using random sampling.  
+**Rationale:** Initially, I tried a greedy coreset selection approach for better representativeness. However, it added 321ms to inference time due to expensive nearest-neighbor computations during coreset construction. I switched to simple random sampling (keeping 15% of patches). Surprisingly, not only is this faster, but it also yields better accuracy than greedy sampling. My hypothesis is that random sampling avoids overfitting to specific patterns in the training set, creating a more generalizable normal boundary. This ratio of 0.15 balances memory efficiency with inference speed while achieving the best empirical results.  
+**Trade-off:** Random sampling (15%) theoretically risks losing some important normal patterns compared to more sophisticated greedy or diversity-based methods. However, I'm observing better accuracy and faster inference, so the empirical results outweigh the theoretical concern. In the future, I can experiment with diversity-based coreset methods (e.g., k-center or density-aware sampling) if performance plateaus, but for now random sampling at 0.15 is the empirical winner.
 
 ### 7.8 Indexing Strategy (In-Memory k-NN)
-**Decision:** Store coreset patches in memory and use exact k-NN search.  
-**Rationale:** I want fast inference with guaranteed correctness. My observation is that ~100K coreset patches fit comfortably in memory, and I prefer the simplicity and interpretability of exact search over approximate methods.  
-**Trade-off:** I acknowledge this is memory-intensive for very large coresets (millions). Approximate methods (FAISS, LSH) could scale better, but I believe added complexity isn't worth it for my current scale.
+**Decision:** Store coreset patches in memory and use exact k-NN search with torch.cdist.  
+**Rationale:** I want fast inference with guaranteed correctness. My observation is that ~100K coreset patches fit comfortably in memory. I use torch.cdist for exact k-NN distances, which is simple, interpretable, and GPU-accelerated. I found that torch.cdist achieves better scores than approximate methods because it computes exact distances without quantization error. This precision is crucial for anomaly detection where small distance differences can affect the decision boundary. The simplicity also reduces debug complexity and makes results reproducible.  
+**Trade-off:** This is memory-intensive for very large coresets (millions). FAISS GPU indexing could scale better for massive datasets, but I believe the simplicity and accuracy of exact search justifies the memory trade-off for my current scale.
 
 ### 7.9 Number of Neighbors (k=9)
 **Decision:** Set k=9 for nearest neighbor search.  
@@ -251,7 +273,17 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 **Rationale:** I believe in manufacturing, missing a defect is catastrophic and unacceptable. My observation is that false positives are acceptable since human reviewers can filter them out. I prioritize recall above all else.  
 **Trade-off:** I accept high false positive rate as the necessary cost, but I gain the guarantee of zero false negatives. No defective products slip through.
 
-## 8. Assumptions
+## 8. Approaches That Didn't Work
+
+During development, I experimented with several techniques that either didn't improve performance or increased complexity without benefit:
+
+1. **Coarse-to-Fine Feature Extraction** - I tried hierarchical multi-scale feature extraction to capture both global context and local details. However, this approach didn't improve the AUROC score and significantly increased inference time due to processing multiple resolution levels. The added complexity didn't justify the computational cost.
+
+2. **Greedy Coreset Selection** - I initially used greedy coreset sampling for better representativeness (aiming to preserve the most "diverse" patches). However, this added 321ms to inference time due to expensive nearest-neighbor computations during coreset construction. Random sampling at 0.15 ratio proved faster and paradoxically achieved better AUROC, likely because it avoids overfitting to specific patterns in the training set.
+
+3. **Fine-tuning Feature Extractor** - I experimented with fine-tuning DINOv2 on my specific dataset to adapt it better. However, with limited normal examples (~720 training samples), fine-tuning led to overfitting and actually decreased generalization performance. Pre-trained features without fine-tuning performed better.
+
+## 9. Assumptions
 
 1. **Normal training samples are representative** - Training set contains diverse normal variations (lighting, angles, surface texture)
 2. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
@@ -268,6 +300,15 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 | **F1 Score** | Balanced precision-recall at chosen threshold | > 0.85 |
 | **F2 Score** | Recall-weighted (catch defects > precision) | > 0.80 |
 | **Confusion Matrix** | TP/FP/TN/FN breakdown for business analysis | Low FN rate |
+
+### Inference Performance
+
+| Device | Mean (ms) | Std Dev (ms) | Min (ms) | Max (ms) |
+|--------|-----------|-------------|----------|----------|
+| GPU    | 28.94     | 0.83        | 27.28    | 29.78    |
+| CPU    | 295.21    | 6.23        | 286.33   | 306.66   |
+
+GPU inference is ~10x faster than CPU. This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
 
 ## 10. Limitations
 
