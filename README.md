@@ -362,7 +362,8 @@ On the other hand, the anomaly score distribution shows clear separation between
 
 | Device | Mean (ms) | Std Dev (ms) | Min (ms) | Max (ms) |
 |--------|-----------|-------------|----------|----------|
-| GPU    | 28.94     | 0.83        | 27.28    | 29.78    |
+| GPU (CUDA) | 28.94     | 0.83        | 27.28    | 29.78    |
+| GPU (MPS)  | 33.78     | 0.94        | 32.75    | 36.36    |
 | CPU    | 295.21    | 6.23        | 286.33   | 306.66   |
 
 </div>
