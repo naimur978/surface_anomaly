@@ -521,7 +521,7 @@ def main() -> None:
     if (output_dir / "inference.log").exists():
         print(f"  - inference.log")
 
-    logger.info(f"MLflow UI: mlflow ui --backend-store-uri ./mlruns")
+    logger.info(f"MLflow UI: mlflow ui --backend-store-uri sqlite:///mlflow.db")
 
     # Show false positives if any
     mismatches_dir = output_dir / "mismatches"

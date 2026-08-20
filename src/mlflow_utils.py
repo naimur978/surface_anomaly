@@ -2,8 +2,6 @@
 
 import os
 from typing import Dict, Any, Optional
-# Allow file store to avoid maintenance mode warning
-os.environ['MLFLOW_ALLOW_FILE_STORE'] = 'true'
 
 import mlflow
 import mlflow.pytorch
@@ -11,12 +9,12 @@ import json
 from pathlib import Path
 
 
-def setup_mlflow(experiment_name: str = 'surface-anomaly-detection', tracking_uri: str = './mlruns') -> str:
+def setup_mlflow(experiment_name: str = 'surface-anomaly-detection', tracking_uri: str = 'sqlite:///mlflow.db') -> str:
     """Initialize MLflow experiment.
 
     Args:
         experiment_name: Name of the experiment
-        tracking_uri: Local directory for MLflow artifacts
+        tracking_uri: SQLite database URI for MLflow tracking
 
     Returns:
         Experiment ID

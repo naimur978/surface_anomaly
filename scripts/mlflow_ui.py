@@ -83,7 +83,7 @@ def main():
 
     try:
         subprocess.run(
-            ["mlflow", "ui", "--backend-store-uri", "./mlruns", "--port", str(port)],
+            ["mlflow", "ui", "--backend-store-uri", "sqlite:///mlflow.db", "--port", str(port)],
             check=False
         )
     except KeyboardInterrupt:

@@ -40,8 +40,8 @@ def get_model_path(config_file):
 
 def main():
     """Run the complete pipeline."""
-    # Allow file store for MLflow (disable maintenance mode warning)
-    os.environ['MLFLOW_ALLOW_FILE_STORE'] = 'true'
+    # Use SQLite backend for MLflow (recommended over file-based store)
+    os.environ['MLFLOW_TRACKING_URI'] = 'sqlite:///mlflow.db'
 
     print("\n" + "="*70)
     print("SURFACE ANOMALY DETECTION - TRAINING & INFERENCE PIPELINE")

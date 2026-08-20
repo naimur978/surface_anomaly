@@ -101,7 +101,7 @@ def main(config_path: str = "config.yaml") -> Dict[str, Any]:
     logger.info("=" * 60)
     logger.info("TRAINING COMPLETE")
     logger.info("=" * 60)
-    logger.info(f"MLflow UI: mlflow ui --backend-store-uri ./mlruns")
+    logger.info(f"MLflow UI: mlflow ui --backend-store-uri sqlite:///mlflow.db")
 
     end_run()
     return metrics
