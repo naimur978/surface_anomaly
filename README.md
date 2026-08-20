@@ -344,7 +344,7 @@ During development, I experimented with several techniques that either didn't im
 
 I achieved 99.81% image-level AUROC with DINOv2, exceeding the 98% target that I set initiallly. This demonstrates strong discrimination between normal and anomalous surfaces. It means my model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that DINOv2 features capture surface defects very effectively.
 
-My pixel-level AUROC is lower at 88.98% because the model operates at patch granularity (16×16 grid = 256 patches per image). At inference, when I upscale patch-level scores to pixel space and apply Gaussian filtering, the smoothing blurs fine-grained localization details. Small defects spanning partial patches are harder to localize precisely at the pixel level compared to image-level classification.
+My pixel-level AUROC is lower at 88.98% for several reasons. The model operates at patch granularity (16×16 grid = 256 patches per image), which inherently limits localization precision. At inference, upscaling patch-level scores to pixel space and applying Gaussian filtering blurs fine-grained details. Additionally, manual ROI masks sometimes misalign with actual product boundaries, introducing noise around borders that affects pixel-level accuracy. Small defects spanning partial patches are particularly hard to localize precisely at the pixel level compared to image-level classification.
 
 I prioritize 100% recall with my threshold to catch all defects in manufacturing QA.
 
