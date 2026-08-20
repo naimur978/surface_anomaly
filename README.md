@@ -38,7 +38,13 @@ This work develops an unsupervised anomaly detection solution for surface defect
 
 ## 1. Installation
 
-Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
+1. Create a Python virtual environment:
+
+```bash
+python -m venv venv
+```
+
+2. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
 
 ```bash
 # Your dataset structure should look like:
