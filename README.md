@@ -201,7 +201,7 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 
 ### 6.2 Why I Chose Patch-Based Approach
 
-I needed localization (spatial heatmaps) not just classification. Patch-based methods [1] provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike autoencoders [2] which rely mostly on fine-tuning. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
+I needed localization (spatial heatmaps) not just classification. Patch-based methods [1] provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike U-Net based reconstruction approaches [2] or autoencoders [3] which rely mostly on fine-tuning and extensive training. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
 
 ## 7. Key Design Decisions
 
