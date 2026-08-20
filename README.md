@@ -407,40 +407,19 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Hierarchical k-NN** - Multi-scale patch analysis (local + global context) for better localization
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
-### 12.3 Long-term & Transformer Benchmarking
+### 12.3 Long-term
 
-**Advanced Transformer-Based Approaches:**
+**Transformer-Based Approaches:**
+- **Zero-Shot CLIP + DINOv2 Ensemble** - Multimodal embeddings combining vision and text descriptions of defects. No labeled defects required.
+- **Contrastive Learning (SimCLR/BYOL)** - Self-supervised pretraining on 720 normal images for tighter normal boundary.
+- **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vs. your failed TTA which lacked model diversity).
+- **Transformer Attention for Sparse Features** - Reduce memory bank to 5K-10K critical patches via ViT attention pruning.
 
-Recent SOTA methods in transformer-based anomaly detection offer new directions:
+**Benchmarking:**
+- Test on MVTec AD, VisA datasets to validate generalization beyond your specific surface type.
+- Key metrics: AUROC (image & pixel), F1-score, inference time (<30ms GPU target).
 
-1. **Zero-Shot Anomaly Detection with CLIP** - Combine DINOv2 visual features with CLIP multimodal embeddings. Text descriptions of defects ("scratches", "dents", "corrosion") generate semantic embeddings without needing labeled defects. Why this works for you: your 12 test defects are insufficient for supervised learning; zero-shot avoids this bottleneck. Expected gain: handles Feature 1 vs Feature 2 differences via semantic descriptions, reduces false positives.
-
-2. **Contrastive Learning (SimCLR/BYOL)** - Self-supervised pretraining on your 720 normal images. Unlike supervised fine-tuning (which overfitted), contrastive learning learns tight normal boundary without degrading generalization. Why this works: you have perfect normal examples but limited defect examples; self-supervised learning is designed for exactly this scenario. Expected gain: tighter normal boundary reduces Images 2-3 false positives.
-
-3. **Multi-Modal Transformer Ensemble** - Ensemble fundamentally different models (DINOv2 for structure, CLIP for semantics, ViT-Adapter for lightweight adaptation). Unlike your failed TTA (which used same model with different seeds), these models have orthogonal strengths. Why this works: different models catch different patterns; voting reduces false positives. Expected gain: more robust than single model, especially on borderline cases.
-
-4. **Transformer Attention for Sparse Features** - Use ViT attention maps to identify semantically important patches. Reduce memory bank from 27,648 to ~5K-10K critical patches via attention-guided pruning. Why this works: memory bank gaps (Images 2-3) suggest coreset has redundant patches; attention identifies truly representative features. Expected gain: denser memory bank, fewer false positives, same/better inference speed.
-
-**Benchmarking Strategy:**
-
-For production validation, benchmark against established datasets:
-- MVTec AD (industrial standard, 15 object categories)
-- VisA (multi-view, more challenging)
-- Evaluate metrics: AUROC (image & pixel), F1-score, inference time (target <30ms GPU)
-- Robustness test: apply to unseen defect types to measure domain generalization
-
-**Which Transformer Approach to Prioritize:**
-- **Short-term (1 week)**: Zero-Shot CLIP + DINOv2 ensemble (low risk, leverages existing models)
-- **Medium-term (1 month)**: Contrastive learning fine-tuning on 720 normals (addresses false positives systematically)
-- **Long-term (3+ months)**: Specialized industrial Vision Transformer pretrained on defect datasets (SOTA for manufacturing)
-
----
-
-**Legacy Techniques (Comparison Baseline):**
-- **One-class classifiers** - Replace k-NN with learned decision boundary (e.g., Support Vector Data Description)
-- **Generative models** - Reconstruct normal images. Anomaly = reconstruction error (GANomaly approach)
-- **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
-- **Active learning** - Iteratively select hard examples for human labeling to improve model
+**Priority:** Start with Zero-Shot CLIP (low risk) → Contrastive Learning (medium risk) → Industrial ViT fine-tuning (long-term SOTA).
 
 ## 12. References
 
