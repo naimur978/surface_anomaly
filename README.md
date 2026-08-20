@@ -305,6 +305,8 @@ During development, I experimented with several techniques that either didn't im
 
 3. **Fine-tuning Feature Extractor** - I experimented with fine-tuning DINOv2 on my specific dataset to adapt it better. However, with limited normal examples (~720 training samples), fine-tuning led to overfitting and actually decreased generalization performance. Pre-trained features without fine-tuning performed better.
 
+4. **Test-time Augmentation (TTA) with Ensemble Memory Banks** - I tried test-time augmentation by creating two models with different random seeds (different coreset samples) and ensembling their memory banks. The approach: (1) train two independent PatchCore models with different coreset samples, (2) at inference, compute anomaly score for the test image using both memory banks, (3) average or max-pool the scores. Intuition: two independent memory banks might capture different normal pattern variations, reducing gaps like Images 2-3. However, TTA added 232ms overhead per inference (nearly 8x slower than single model's ~28.94ms), and I observed no improvement in AUROC on my dataset. The lack of improvement suggests either: (a) the dataset patterns are well-captured by a single 0.15 coreset, or (b) the two models were sampling similar regions despite different seeds (not enough diversity from random sampling). The computational cost far outweighed any potential benefit for production use. Single model inference remains the practical choice.
+
 ## 9. Assumptions
 
 1. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
