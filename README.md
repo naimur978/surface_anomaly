@@ -301,6 +301,17 @@ During development, I experimented with several techniques that either didn't im
 | **F2 Score** | Recall-weighted (catch defects > precision) | > 0.80 |
 | **Confusion Matrix** | TP/FP/TN/FN breakdown for business analysis | Low FN rate |
 
+### Actual Results on Surface Dataset
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| **AUROC (Image-level)** | 0.9981 (99.81%) | ✓ Exceeds 0.98 target |
+| **AUROC (Pixel-level)** | 0.8898 (88.98%) | ✓ Near 0.90 target |
+| **Decision Threshold** | 36.0894 | 100% recall prioritized |
+| **Inference Time (CPU)** | 25.9 s total | Full validation set |
+
+The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces.
+
 ### Inference Performance
 
 | Device | Mean (ms) | Std Dev (ms) | Min (ms) | Max (ms) |
