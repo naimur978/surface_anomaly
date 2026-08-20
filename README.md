@@ -392,8 +392,6 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 
 **Observation:** These false positives highlight a fundamental trade-off in one-class anomaly detection. Aggressive threshold or coreset tuning to reduce FP rate risks missing true defects. The current approach prioritizes zero false negatives (100% recall), accepting a 0.76% FP rate (4/524) as the acceptable cost for manufacturing quality assurance.
 
-![False Positive Analysis](assets/false_positive_analysis.png)
-
 ## 11. Limitations
 
 1. **Limited training diversity** - Model trained on 1-2 surface types. May not generalize to new defect patterns
