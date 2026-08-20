@@ -28,15 +28,13 @@ This work is about detecting and localizing surface defects using DINOv2/Efficie
    - [7.9 Number of Neighbors](#79-number-of-neighbors-k9)
    - [7.10 Threshold Strategy](#710-threshold-strategy-100-recall)
 8. [Approaches That Didn't Work](#8-approaches-that-didnt-work)
-9. [Assumptions](#9-assumptions)
-10. [Evaluation Metrics](#10-evaluation-metrics)
-11. [Limitations](#11-limitations)
+9. [Evaluation Metrics](#9-evaluation-metrics)
+10. [Limitations](#10-limitations)
 11. [Potential Room for Improvements](#11-potential-room-for-improvements)
     - [11.1 Short-term](#111-short-term)
     - [11.2 Medium-term](#112-medium-term)
     - [11.3 Long-term](#113-long-term)
-12. [Code Setup Plan](#12-code-setup-plan)
-13. [References](#13-references)
+12. [References](#12-references)
 
 ## 1. Installation
 
@@ -325,13 +323,7 @@ During development, I experimented with several techniques that either didn't im
 
 5. **Duplicate Image Detection** - I checked the training dataset for duplicate images using MD5 hashing to detect if the same image appeared multiple times (which could inflate training metrics). I computed hashes for all 720 training images and found zero duplicates. This is good—training data is diverse and not contaminated by repetition.
 
-## 9. Assumptions
-
-1. **Anomalies deviate significantly in feature space** - Defects create distinct patterns that k-NN can isolate
-2. **Threshold generalizes** - 100% recall threshold on validation generalizes to unseen test data
-3. **No label noise** - Training data correctly labeled as normal (critical for one-class anomaly detection)
-
-## 10. Evaluation Metrics
+## 9. Evaluation Metrics
 
 ### Results on Surface Dataset
 
@@ -388,7 +380,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 
 **Observation:** These false positives highlight a fundamental trade-off in one-class anomaly detection. Aggressive threshold or coreset tuning to reduce FP rate risks missing true defects. The current approach prioritizes zero false negatives (100% recall), accepting a 0.76% FP rate (4/524) as the acceptable cost for manufacturing quality assurance.
 
-## 11. Limitations
+## 10. Limitations
 
 1. **Limited training diversity** - Model trained on 1-2 surface types. May not generalize to new defect patterns
 2. **Threshold not adaptive** - Fixed threshold assumes similar defect severity. Rare/subtle defects may be missed
@@ -398,7 +390,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 6. **Class imbalance** - Validation set may have imbalanced normal/defect ratios affecting threshold robustness
 7. **No confidence intervals** - Reported metrics (99.81% AUROC, 36.0894 threshold) lack uncertainty estimates. Test set breakdown: 524 total images (524 normals + 12 defects). More critically, Feature 1 has only 2 defects vs. Feature 2's 10 defects, creating severe data imbalance. A single misclassified defect in Feature 1 changes its recall from 100% to 50%, while the same mistake in Feature 2 changes recall from 100% to 90%. I could have computed 95% confidence intervals using bootstrapping (resample test set 1000x) or K-fold cross-validation, but with only 12 defects total (especially 2 in Feature 1), confidence intervals would be extremely wide and uninformative. Statistical rigor is impossible without more data. For production deployment, I would recommend: (1) collect at least 100+ defects per feature type, (2) ensure balanced representation across feature types, (3) then compute proper confidence intervals before claiming performance guarantees.
 
-## 12. Potential Room for Improvements
+## 11. Potential Room for Improvements
 
 ### 12.1 Short-term
 - **Per-defect-type thresholds** - Replace global threshold (36.0894) with category-specific thresholds. Different defect types (scratches, dents, corrosion, contamination) may have different anomaly score distributions. Current single threshold assumes all defects score equally high, but subtle defects (fine scratches) might score lower than gross defects (large dents). Approach: (1) Manually label test defects by type (if not already labeled), (2) Compute separate threshold for each type to achieve 100% recall per category, (3) Use ensemble voting (flag if any category-threshold triggers). Benefit: catches subtle defects that might slip under global threshold. Trade-off: requires labeled defect taxonomy (currently unavailable), and only feasible with more diverse test data (12 total defects insufficient for reliable per-type statistics).
@@ -418,7 +410,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
 - **Active learning** - Iteratively select hard examples for human labeling to improve model
 
-## 13. References
+## 12. References
 
 [1] P. Bergmann, M. Fauser, D. Sattlegger, and C. Steger, "MVTec AD — A comprehensive real-world dataset for unsupervised anomaly detection," in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019, pp. 9584–9592.
 
