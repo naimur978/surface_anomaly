@@ -331,17 +331,13 @@ GPU inference is ~10x faster than CPU. This validates the importance of GPU acce
 
 ![False Positives](assets/false_positive.png)
 
-Out of 524 normal test images, I observed 4 false positives flagged as defective. Analysis of each:
+Out of 524 normal test images, I observed 4 false positives flagged as defective. Analysis:
 
-1. **Image 1 (Blurry reflections)**: Visually appears faulty with blurry/hazy regions. Initially considered as salt-and-pepper noise or blob artifacts, but manual tuning to exclude it degraded performance on other images. Fair classification as anomalous.
+**Images 1 & 4 (Visually Faulty)**: Both appear to have actual surface defects. Image 1 shows blurry reflections/hazy regions suggesting salt-and-pepper noise or blob artifacts. Image 4 exhibits clear visual defects. These may represent test set mislabeling rather than true false positives. I initially tried manual tuning to exclude Image 1 as noise, but this degraded generalization performance on other images, so I accepted the model's classification as fair.
 
-2. **Image 2 (Memory bank gap)**: Likely a memory bank representation issue. Certain surface regions may not be adequately covered in the random 0.15 coreset sample, causing legitimate normal patterns to score high. Attempted to address through coreset tuning, but couldn't generalize without hurting recall on true defects.
+**Images 2 & 3 (Memory Bank Gaps)**: Represent a systematic issue where the random 0.15 coreset sample doesn't adequately represent certain legitimate surface patterns. Subtle texture variations in these regions score high despite being normal. I attempted to address this through coreset ratio adjustment, but any tuning that reduced these false positives also degraded recall on true defects, forcing me to prioritize the recall objective.
 
-3. **Image 3 (Memory bank gap)**: Similar to Image 2. The random sampling misses subtle pattern variations that appear anomalous but are actually normal. Trade-off between false positive rate and recall robustness.
-
-4. **Image 4 (Visually faulty)**: Appears to have actual surface defects. Likely a mislabeling in the test set rather than a true false positive.
-
-**Observation:** These false positives highlight a fundamental trade-off in one-class anomaly detection. Aggressive threshold tuning to reduce FP rate risks missing true defects. The current approach prioritizes zero false negatives (100% recall), accepting a 0.76% FP rate (4/524) as the acceptable cost for manufacturing quality assurance.
+**Observation:** These false positives highlight a fundamental trade-off in one-class anomaly detection. Aggressive threshold or coreset tuning to reduce FP rate risks missing true defects. The current approach prioritizes zero false negatives (100% recall), accepting a 0.76% FP rate (4/524) as the acceptable cost for manufacturing quality assurance.
 
 ## 11. Limitations
 
