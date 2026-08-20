@@ -445,7 +445,11 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 
 ### 12.3 Long-term
 - **Zero-Shot CLIP + DINOv2 Ensemble** - Multimodal embeddings combining vision and text descriptions of defects. No labeled defects required.
-- **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vs. your failed TTA which lacked model diversity)
+- **Test-Time Augmentation (TTA) with Diverse Models** - Previous TTA using two PatchCore models with same backbone lacked diversity and didn't improve AUROC
+  - **Better approach:** Ensemble DINOv2 + EfficientNet feature extractors (different architectures = orthogonal strengths)
+  - Average anomaly scores across both extractors
+  - Trade-off: 2x inference cost but potentially higher robustness to unseen defects
+- **Multi-Modal Transformer Ensemble** - DINOv2 + CLIP with orthogonal strengths (vision + text embeddings)
 - **Transformer Attention for Sparse Features** - Reduce memory bank to 5K-10K critical patches via ViT attention pruning
 - **Benchmarking on MVTec AD & VisA** - Validate generalization beyond your specific surface type
   - Measure AUROC (image & pixel), F1-score, inference time (<30ms GPU target)
