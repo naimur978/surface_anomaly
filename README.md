@@ -255,6 +255,7 @@ DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qw
 ### Trade-offs
 
 **7.7 ROI Masking**
+
 **Decision:** Apply region-of-interest (ROI) mask by setting pixels outside ROI to black. Procedure:
   - Apply black masking outside the ROI boundary
   - Pad the masked image to a square (with black padding)
@@ -269,6 +270,7 @@ DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qw
 **Trade-off:** Requires manual ROI definition and is inflexible to product shape changes. Assumes the feature extractor handles zero-intensity regions appropriately. However, the empirical 3.5% accuracy gain justifies this. Manual masks sometimes misalign with boundaries, causing red heatmap artifacts around borders. Future improvement: use Segment Anything Model (SAM) for automated ROI refinement or learn an adaptive ROI based on image features.
 
 **7.8 Patch Overlap**
+
 **Decision:** Use overlapping patches with sliding window.
 
 **Rationale:** Overlapping ensures complete spatial coverage and smooth heatmaps without blind spots. Essential for precise anomaly localization.
@@ -276,6 +278,7 @@ DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qw
 **Trade-off:** Increased computational cost due to redundant feature extraction. But necessary for localization accuracy.
 
 **7.9 Coreset Sampling Ratio (0.15)**
+
 **Decision:** Retain 15% of training patches using random sampling.
 
 **Rationale:** I initially tried greedy coreset selection for better representativeness, but it added 321ms to inference time. Random sampling (15%) is faster AND yields better accuracy. My hypothesis: random sampling avoids overfitting to training patterns, creating a more generalizable normal boundary.
@@ -283,6 +286,7 @@ DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qw
 **Trade-off:** Theoretically, random sampling risks losing important patterns vs. greedy/diversity-based methods. However, empirical results (better accuracy + faster inference) outweigh theory. Future work: explore k-center or density-aware sampling if performance plateaus.
 
 **7.10 Indexing Strategy (In-Memory k-NN with Euclidean Distance)**
+
 **Decision:** Store coreset patches in memory and use exact k-NN search with torch.cdist using Euclidean (L2) distance.
 
 **Rationale:** ~27,648 coreset patches fit comfortably in memory. torch.cdist provides exact k-NN distances with no quantization error, crucial when small distance differences affect the decision boundary. Simple, interpretable, GPU-accelerated, and reproducible.
@@ -292,6 +296,7 @@ DINOv2 achieved the best AUROC (96.25%), justifying the 2.4% improvement over Qw
 **Trade-off:** Memory-intensive for very large coresets (millions). FAISS GPU indexing could scale better for massive datasets, but simplicity and accuracy of exact search justify the memory trade-off for my current scale.
 
 **7.11 Threshold Optimization (100% Recall)**
+
 **Decision:** Use 100% recall threshold to catch every defect.
 
 **Rationale:** In manufacturing QA, missing a defect is catastrophic. I propose two thresholds:
