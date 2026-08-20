@@ -168,7 +168,7 @@ Here are the results I got:
 
 </div>
 
-PatchCore showed the strongest performance at 0.8750 AUROC. While this doesn't guarantee it will remain best after customization, I decided to focus on improving PatchCore. Besides, the objective is not to use the most complex model, but to demonstrate a well-reasoned solution. My intention was to keep the ROC AUC above 0.98 to ensure it reliably separates defects from non-defects in production.
+PatchCore showed the strongest performance at 0.8750 AUROC. While this doesn't guarantee it will remain best after customization, I decided to focus on improving PatchCore. As you have mentioned, the objective is not to use the most complex model, but to demonstrate a well-reasoned solution. My intention was to keep the ROC AUC above 0.98 to ensure it reliably separates defects from non-defects in production.
 
 So I moved on with PatchCore as my core idea, and customized the idea, as I explained below.
 
