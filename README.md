@@ -1,6 +1,6 @@
 # Surface Anomaly Localization
 
-This work is about detecting and localizing surface defects using DINOv2/EfficientNet feature extractors with k-NN anomaly scoring. Below, I am going to explain my key decisions and rationale as briefly as possible.
+This work is about detecting and localizing surface defects using DINOv2/EfficientNet feature extractors with k-NN anomaly scoring, inspired by PatchCore [1]. Below, I am going to explain my key decisions and rationale as briefly as possible.
 
 **Quick Overview:** If you don't wanna go through all the scripts, I have made a brief notebook at `notebook.ipynb`. You can see my work at a glance in the notebook.
 
@@ -144,7 +144,7 @@ For continuous integration and deployment, I used:
 
 ### 4.2 Baseline Model Comparison
 
-Initially, I read some recent CVPR papers, but then thought maybe I should start from basic approaches first. I found the **anomalib** library which allowed me to train several algorithms easily. As I used anomalib to train base models, I created the `data/surface/` folder structure following anomalib's documentation. I tried multiple models separately (PaDiM, PatchCore, GANomaly, Autoencoder) which you can find in `baseline_model.ipynb`.
+Initially, I read some recent CVPR papers, but then thought maybe I should start from basic approaches first. I found the **anomalib** library which allowed me to train several algorithms easily. As I used anomalib to train base models, I created the `data/surface/` folder structure following anomalib's documentation. I tried multiple models separately (PaDiM, PatchCore, GANomaly, Autoencoder) [1][2] which you can find in `baseline_model.ipynb`.
 
 Here are the results I got:
 
@@ -192,7 +192,7 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 
 ### 6.2 Why I Chose Patch-Based Approach
 
-I needed localization (spatial heatmaps) not just classification. Patch-based methods provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike autoencoders which rely mostly on fine-tuning. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
+I needed localization (spatial heatmaps) not just classification. Patch-based methods [1] provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike autoencoders [2] which rely mostly on fine-tuning. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
 
 ## 7. Key Design Decisions
 
@@ -249,7 +249,7 @@ Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improv
 **Future Improvement:** The manual ROI masks don't always perfectly match the actual boundary. Sometimes there's misalignment between the mask and the actual boundary. I observe some red heatmap artifacts around the borders, which suggests sensitivity to ROI boundary precision. I could explore: (1) using Segment Anything Model (SAM) for automated ROI refinement with pixel-level precision, or (2) learning an adaptive ROI region based on image features rather than fixed manual masks. This would reduce border artifacts and improve robustness when ROI boundaries don't align perfectly with the actual boundary.
 
 ### 7.5 Feature Extractor (DINOv2)
-**Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14) instead of alternatives.  
+**Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14) [3] instead of alternatives.  
 **Rationale:** I evaluated three feature extractors on my dataset and found that Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excel at detecting subtle texture anomalies in surface defects, which is critical for my use case. I observed that DINOv2 outperforms both Qwen (another ViT) and ResNet (CNN-based) on AUROC.  
 **Trade-off:** I accept higher computational cost at inference compared to lightweight CNNs, but the superior anomaly sensitivity justifies it.
 
