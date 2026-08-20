@@ -458,10 +458,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **ControlNet Inpainting** - Inpaint synthetic defects onto real normal images maintaining photorealistic lighting/shadows
   - Creates training pairs for contrastive learning
   - Trade-off: 2-4 sec/image vs 1 sec Flux Schnell, but higher photorealism
-- **CycleGAN Domain Adaptation** - Generate defects on generic surfaces then adapt to your material via CycleGAN
-  - ~100ms inference, best for continuous deployment
-  - Trade-off: requires 2-3 hours upfront training
-- **Priority:** Start with Flux Schnell (fast, immediate data) → ControlNet (production-grade quality) → CycleGAN (long-term deployment).
+- **Priority:** Start with Flux Schnell (fast, immediate data) → ControlNet (production-grade quality).
 
 ## 12. References
 
