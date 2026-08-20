@@ -414,10 +414,15 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
     - Use ensemble voting (flag if any category-threshold triggers)
   - **Benefit:** Catches subtle defects that might slip under global threshold
   - **Trade-off:** Requires labeled defect taxonomy (currently unavailable), and only feasible with more diverse test data (12 total defects insufficient for reliable per-type statistics)
-- **Adaptive thresholding** - Learn per-image thresholds based on image properties (brightness, contrast, texture complexity) instead of global threshold
 - **Ensemble methods** - Combine multiple backbones (DINOv2 + EfficientNet) for robustness
 - **Hard negative mining** - Focus training on borderline false positives to tighten decision boundary
-- **Improved coreset sampling** - Replace random 0.15 sampling with SOTA methods. Current approach misses pattern variations (Images 2-3 false positives). Options: (1) **k-Center**: O(n·k) complexity, greedily maximize min-distance to existing coreset for better feature space coverage; (2) **Importance Sampling**: O(n) with weighting by k-NN distance, prioritizes hard examples; (3) **Stratified Random Sampling**: O(n) with theoretical guarantees on subspace coverage. Trade-off: improved coreset costs more compute time during training (tolerable one-time cost) but gains better memory bank representation without hurting inference speed.
+- **Improved coreset sampling** - Replace random 0.15 sampling with SOTA methods
+  - **Problem:** Current random approach misses pattern variations (Images 2-3 false positives)
+  - **Options:**
+    - **k-Center:** O(n·k) complexity, greedily maximize min-distance to existing coreset for better feature space coverage
+    - **Importance Sampling:** O(n) with weighting by k-NN distance, prioritizes hard examples
+    - **Stratified Random Sampling:** O(n) with theoretical guarantees on subspace coverage
+  - **Trade-off:** Improved coreset costs more compute time during training (tolerable one-time cost) but gains better memory bank representation without hurting inference speed
 
 ### 12.2 Medium-term
 - **Domain-specific feature extraction** - Fine-tune DINOv2 on normal surface images using self-supervised learning (e.g., SimCLR, BYOL). Current pre-trained features are general-purpose (trained on ImageNet), which is robust but not optimized for subtle surface texture anomalies. Domain adaptation would learn surface-specific invariances (e.g., lighting changes, minor scratches that aren't defects) and make the feature space tighter for true defects. Constraint: requires 720+ good examples (we have exactly 720), which is minimal but feasible. I didn't attempt this initially because with only 720 training images, fine-tuning risks overfitting; however, self-supervised fine-tuning with strong data augmentation could work. Expected benefit: tighter normal boundary, fewer memory bank gaps (fewer Images 2-3 false positives).
