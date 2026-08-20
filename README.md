@@ -314,7 +314,7 @@ During development, I experimented with several techniques that either didn't im
 | **AUROC (Pixel-level)** | 0.8898 (88.98%) |
 | **Decision Threshold** | 36.0894 |
 
-The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
+The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. This means the model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that the DINOv2 features capture surface defects very effectively. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
 
 ![ROC Curve](assets/roc_curve.png)
 
