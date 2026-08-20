@@ -405,7 +405,15 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 ## 11. Potential Room for Improvements
 
 ### 12.1 Short-term
-- **Per-defect-type thresholds** - Replace global threshold (36.0894) with category-specific thresholds. Different defect types (scratches, dents, corrosion, contamination) may have different anomaly score distributions. Current single threshold assumes all defects score equally high, but subtle defects (fine scratches) might score lower than gross defects (large dents). Approach: (1) Manually label test defects by type (if not already labeled), (2) Compute separate threshold for each type to achieve 100% recall per category, (3) Use ensemble voting (flag if any category-threshold triggers). Benefit: catches subtle defects that might slip under global threshold. Trade-off: requires labeled defect taxonomy (currently unavailable), and only feasible with more diverse test data (12 total defects insufficient for reliable per-type statistics).
+- **Per-defect-type thresholds** - Replace global threshold (36.0894) with category-specific thresholds
+  - Different defect types (scratches, dents, corrosion, contamination) have different anomaly score distributions
+  - Current single threshold assumes all defects score equally high, but subtle defects (fine scratches) might score lower than gross defects (large dents)
+  - **Approach:**
+    - Manually label test defects by type (if not already labeled)
+    - Compute separate threshold for each type to achieve 100% recall per category
+    - Use ensemble voting (flag if any category-threshold triggers)
+  - **Benefit:** Catches subtle defects that might slip under global threshold
+  - **Trade-off:** Requires labeled defect taxonomy (currently unavailable), and only feasible with more diverse test data (12 total defects insufficient for reliable per-type statistics)
 - **Adaptive thresholding** - Learn per-image thresholds based on image properties (brightness, contrast, texture complexity) instead of global threshold
 - **Ensemble methods** - Combine multiple backbones (DINOv2 + EfficientNet) for robustness
 - **Hard negative mining** - Focus training on borderline false positives to tighten decision boundary
