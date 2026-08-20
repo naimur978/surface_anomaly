@@ -41,10 +41,17 @@ This work develops an unsupervised anomaly detection solution for surface defect
 1. Create a Python virtual environment:
 
 ```bash
-python -m venv venv
+python3 -m venv venv
 ```
 
-2. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
+2. Activate virtual environment and install dependencies:
+
+```bash
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+3. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
 
 ```bash
 # Your dataset structure should look like:
@@ -63,13 +70,6 @@ data/
 ```
 
 ## 2. Usage
-
-First, activate virtual environment and install dependencies:
-
-```bash
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
 
 Open **two terminals** and activate virtual environment in both:
 
