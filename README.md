@@ -368,7 +368,11 @@ On the other hand, the anomaly score distribution shows clear separation between
 
 </div>
 
-GPU inference is ~10x faster than CPU. I performed GPU warmup runs before measuring to ensure GPU memory is allocated and caches are warmed up, which is crucial for accurately tracking real inference time. This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
+GPU inference is ~10x faster than CPU. 
+
+> **GPU Warmup:** I performed GPU warmup runs before measuring to ensure GPU memory is allocated and caches are warmed up, which is crucial for accurately tracking real inference time.
+
+This validates the importance of GPU acceleration and efficient design choices (224×224 input size, avoiding greedy coreset) for production deployment.
 
 ### False Positives Analysis
 
