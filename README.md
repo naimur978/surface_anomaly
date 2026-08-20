@@ -206,9 +206,7 @@ The manufacturing setup operates under controlled conditions: fixed camera, cons
 **7.2 Single Unified Dataset**
 Both feature types (Feature 1 and Feature 2) represent normal surface variations of the same material with different finishes/tolerances. I tested both separate and unified approaches on my dataset and found no significant performance drop when combining them. A unified approach learns a general "normal" boundary across both types, simplifying deployment and threshold management.
 
-Note: subject-based thresholding (separate thresholds per feature type) could be implemented to optimize each type individually, but I haven't done that in this version since the unified approach already achieves good performance.
-
-![Dataset Strategy Comparison](assets/dataset.png)
+Note: subject-based thresholding (separate thresholds per feature type) could be implemented to optimize each type individually, but I haven't done that in this version since the unified approach already achieves good performance. After merging both feature types, I got a total of 720 training images and 110 test images (70 normal, 40 defective). The defective test dataset is very low, which is why the F1 score tends to be lower compared to AUROC. AUROC is more robust to class imbalance since it measures ranking ability regardless of threshold, while F1 is sensitive to the imbalance between normal and defective samples.
 
 ### Design Choices
 
