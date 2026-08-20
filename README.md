@@ -425,9 +425,20 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
   - **Trade-off:** Improved coreset costs more compute time during training (tolerable one-time cost) but gains better memory bank representation without hurting inference speed
 
 ### 12.2 Medium-term
-- **Domain-specific feature extraction** - Fine-tune DINOv2 on normal surface images using self-supervised learning (e.g., SimCLR, BYOL). Current pre-trained features are general-purpose (trained on ImageNet), which is robust but not optimized for subtle surface texture anomalies. Domain adaptation would learn surface-specific invariances (e.g., lighting changes, minor scratches that aren't defects) and make the feature space tighter for true defects. Constraint: requires 720+ good examples (we have exactly 720), which is minimal but feasible. I didn't attempt this initially because with only 720 training images, fine-tuning risks overfitting; however, self-supervised fine-tuning with strong data augmentation could work. Expected benefit: tighter normal boundary, fewer memory bank gaps (fewer Images 2-3 false positives).
+- **Domain-specific feature extraction** - Fine-tune DINOv2 on normal surface images using self-supervised learning (SimCLR, BYOL)
+  - Current pre-trained features (ImageNet) are robust but not optimized for subtle surface texture anomalies
+  - Domain adaptation would learn surface-specific invariances (lighting changes, minor scratches that aren't defects)
+  - **Constraint:** Only 720 training images (minimal, risks overfitting without strong augmentation)
+  - **Expected benefit:** Tighter normal boundary, fewer memory bank gaps (fewer Images 2-3 false positives)
 
-- **Production Monitoring & Concept Drift Detection** - Deploy monitoring system to log inference predictions, anomaly scores, and metadata (timestamp, camera condition, surface batch). Monitor for concept drift: when normal image score distribution shifts (e.g., new camera lighting, material changes, different product batch), the model's threshold may become stale. Trigger retraining when: (1) FP rate exceeds 2%, (2) FN rate detected (human review shows missed defects), (3) score distribution changes by >15% KL divergence. Approach: maintain running statistics of test scores; use ADWIN (Adaptive Windowing) or statistical tests to detect distribution shift. Why this matters: manufacturing conditions evolve; a model trained on Jan 2024 data may not work in Mar 2024 if production parameters change. Expected benefit: catches performance degradation before it impacts QA, enables continuous model improvement.
+- **Production Monitoring & Concept Drift Detection** - Deploy monitoring system to detect when model performance degrades
+  - Log inference predictions, anomaly scores, metadata (timestamp, camera condition, surface batch)
+  - **Trigger retraining when:**
+    - FP rate exceeds 2%
+    - FN rate detected (human review shows missed defects)
+    - Score distribution changes by >15% KL divergence
+  - **Implementation:** Use ADWIN (Adaptive Windowing) or statistical tests to detect distribution shift
+  - **Why it matters:** Manufacturing conditions evolve; Jan 2024 model may fail by Mar 2024
 
 - **Hierarchical k-NN** - Multi-scale patch analysis (local + global context) for better localization
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
