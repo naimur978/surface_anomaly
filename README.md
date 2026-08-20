@@ -218,9 +218,16 @@ I needed localization (spatial heatmaps) not just classification. Patch-based me
 **Why not DINOv3:** I initially tried DINOv3 as well, but it didn't work as well as DINOv2. DINOv3 is larger and more resource-intensive, requiring more memory and computational power. The performance gains didn't justify the overhead for my use case. I also found that DINOv3's pretrained weights were more prone to overfitting on smaller datasets compared to DINOv2. Given my computational constraints and dataset size, DINOv2 proved to be the better choice.
 
 ### 7.3 Data Augmentation (None for Training)
-**Decision:** No augmentation on training data. Train only on original normal samples.  
-**Rationale:** I reason that training data is "normal only". Artificial augmentation could introduce unrealistic variations that distort the normal boundary in feature space. I want to avoid synthetic bias.  
-**Trade-off:** I accept losing robustness to lighting/angle variations at test time, but I believe maintaining a tight normal boundary without synthetic bias is more critical.
+**Decision:** No augmentation on training data. Train only on original normal samples.
+
+**Rationale:** Since the camera is fixed in a controlled manufacturing environment, variations are limited. There are no different angles, no dramatic lighting changes, and no camera motion. The main natural variations that could occur at test time would be:
+- Subtle shifts in lighting (ambient changes, slight shadows)
+- Minor translational shifts (product placement on conveyor)
+- Surface reflections or glare (environmental reflections)
+
+I initially considered augmentation (rotations, color jitter, brightness shifts) to make the model robust to these variations. However, I realized that augmentation could introduce unrealistic variations that distort the "normal" boundary in feature space. For example, arbitrary rotations don't reflect actual test conditions, and aggressive color jitter might make the model insensitive to legitimate defect signatures. Instead, I rely on the pre-trained DINOv2 features, which are naturally robust to these subtle environmental shifts due to training on ImageNet's diverse data. This allows me to keep the training boundary tight and focused on actual surface anomalies rather than synthetic variations.
+
+**Trade-off:** I accept that if there are drastic changes (e.g., new lighting setup, different camera angle), the model may not generalize well. However, given the controlled environment assumption, a tight normal boundary without synthetic bias is more valuable than augmentation-induced robustness to unrealistic scenarios.
 
 ### 7.4 ROI Masking
 **Decision:** Apply region-of-interest (ROI) mask by setting pixels outside ROI to black (0 intensity). The procedure:
@@ -268,7 +275,7 @@ Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improv
 **Rationale:** I need to balance two tensions: small k is too noisy, large k loses sensitivity to anomalies. Through experimentation, I found k=9 works well for my specific dataset and recall requirements.  
 **Trade-off:** I've observed higher k gives smoother but less sensitive results. Lower k is more sensitive but noisier. I chose k=9 as the empirical sweet spot for my use case.
 
-### 7.10 Threshold Strategy (100% Recall)
+### 7.10 Threshold Optimization (100% Recall)
 **Decision:** Use 100% recall threshold to catch every defect.
 
 **Rationale:** In manufacturing QA, missing a defect is catastrophic. I propose two thresholds based on different use cases:
