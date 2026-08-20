@@ -196,10 +196,6 @@ So I moved on with PatchCore as my core idea, and customized the idea, as I expl
 
 I needed localization (spatial heatmaps) not just classification. Patch-based methods provide spatial information, work with only normal samples (one-class learning), and are sensitive to subtle texture anomalies. Additionally, PatchCore offers many tunable hyperparameters (coreset ratio, k-neighbors, feature extractor) unlike autoencoders which rely mostly on fine-tuning. This flexibility is crucial given my limited training data. Given my limited time, I chose a technique that is algorithm-based (k-NN, feature engineering, threshold tuning) rather than model-based (requiring extensive training or fine-tuning). This allowed me to iterate faster and achieve good results without waiting for multiple training runs.
 
-## System Architecture Diagram
-
-![Architecture Diagram](assets/architecture_diagram.png)
-
 ## 7. Key Design Decisions
 
 ### 7.1 Dataset Strategy (Unified vs. Separate)
