@@ -38,7 +38,7 @@ This work develops an unsupervised anomaly detection solution for surface defect
 
 ## 1. Installation
 
-1. Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
+Extract the dataset folder (`Anomaly Detection Data`) and place it under the `data/` directory:
 
 ```bash
 # Your dataset structure should look like:
@@ -56,13 +56,14 @@ data/
         └── test_nok/
 ```
 
-2. Install Python dependencies:
+## 2. Usage
+
+First, activate virtual environment and install dependencies:
 
 ```bash
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
-
-## 2. Usage
 
 Open **two terminals** and activate virtual environment in both:
 
@@ -73,7 +74,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 python scripts/mlflow_ui.py
 ```
 
-I have put the code to solve port conflict. So you can directly run the URL on your browser: `http://localhost:5000`
+I have put the code to solve port conflict. So you can directly run the URL on your browser: `http://127.0.0.1:5000/`
 
 **Terminal 2 - Run Pipeline:**
 
