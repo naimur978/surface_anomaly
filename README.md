@@ -370,6 +370,7 @@ Out of 524 normal test images, I observed 4 false positives flagged as defective
 - **Adaptive thresholding** - Learn per-image or per-defect-type thresholds instead of global threshold
 - **Ensemble methods** - Combine multiple backbones (DINOv2 + EfficientNet) for robustness
 - **Hard negative mining** - Focus training on borderline false positives to tighten decision boundary
+- **Improved coreset sampling** - Replace random 0.15 sampling with SOTA methods. Current approach misses pattern variations (Images 2-3 false positives). Options: (1) **k-Center**: O(n·k) complexity, greedily maximize min-distance to existing coreset for better feature space coverage; (2) **Importance Sampling**: O(n) with weighting by k-NN distance, prioritizes hard examples; (3) **Stratified Random Sampling**: O(n) with theoretical guarantees on subspace coverage. Trade-off: improved coreset costs more compute time during training (tolerable one-time cost) but gains better memory bank representation without hurting inference speed.
 
 ### 12.2 Medium-term
 - **Fine-tuning** - Adapt pre-trained features with contrastive learning on domain-specific data
