@@ -321,17 +321,17 @@ GPU inference is ~10x faster than CPU. This validates the importance of GPU acce
 
 ## 12. Potential Room for Improvements
 
-### 11.1 Short-term
+### 12.1 Short-term
 - **Adaptive thresholding** - Learn per-image or per-defect-type thresholds instead of global threshold
 - **Ensemble methods** - Combine multiple backbones (DINOv2 + EfficientNet) for robustness
 - **Hard negative mining** - Focus training on borderline false positives to tighten decision boundary
 
-### 11.2 Medium-term
+### 12.2 Medium-term
 - **Fine-tuning** - Adapt pre-trained features with contrastive learning on domain-specific data
 - **Hierarchical k-NN** - Multi-scale patch analysis (local + global context) for better localization
 - **Anomaly-specific clustering** - Separate "defect types" to learn better thresholds per category
 
-### 11.3 Long-term
+### 12.3 Long-term
 - **One-class classifiers** - Replace k-NN with learned decision boundary (e.g., Support Vector Data Description)
 - **Generative models** - Reconstruct normal images. Anomaly = reconstruction error (GANomaly approach)
 - **Semi-supervised learning** - Leverage few labeled examples to improve threshold selection
