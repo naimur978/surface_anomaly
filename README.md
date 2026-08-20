@@ -300,18 +300,11 @@ While DINOv3 achieved a slightly higher AUROC (0.9711), it is larger and more re
 
 **Decision:** Use 100% recall threshold to catch every defect.
 
-**Rationale:** In manufacturing QA, missing a defect is catastrophic. I propose two thresholds:
+**Rationale:** In manufacturing QA, missing a defect is catastrophic. I computed two candidate thresholds from my data:
 
-1. **99th Percentile (Production Default)**: 36.0894
-   - Scores from 99th percentile of training data (normal samples only)
-   - Good starting point for statistical threshold selection
-   - Balances coverage with reasonable false positive rate
+1. **99th Percentile (Production Default)**: 36.0894 - I computed this as the 99th percentile of anomaly scores from my training data (normal samples only). This provides a statistically-grounded threshold that balances coverage with a reasonable false positive rate.
 
-2. **100% Recall Threshold (Industry Practice)**: 36.9051
-   - Derived from validation set: lowest score achieving 100% recall (zero false negatives)
-   - In practice, validate on larger test set, then choose whichever optimizes business metrics
-   - This is the manufacturing approach: collect test images, measure recall at different thresholds, select where recall = 100%
-   - Accepts false positives as unavoidable; human reviewers filter them
+2. **100% Recall Threshold (Industry Practice)**: 36.9051 - I derived this by finding the lowest anomaly score on my validation set that achieves 100% recall (zero false negatives). In practice, I would validate this threshold on a larger test set before deployment. In real manufacturing, the standard approach is to collect test images, measure recall at different thresholds, and select the one where recall reaches 100%. Since false positives are acceptable (human reviewers filter them), I can accept a higher false alarm rate to guarantee no defective products escape.
 
 ![Threshold Comparison](assets/threshold_comparison.png)
 
