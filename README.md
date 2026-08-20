@@ -269,9 +269,24 @@ Black masking achieved 2% ROC AUC improvement over white masking and 3.5% improv
 **Trade-off:** I've observed higher k gives smoother but less sensitive results. Lower k is more sensitive but noisier. I chose k=9 as the empirical sweet spot for my use case.
 
 ### 7.10 Threshold Strategy (100% Recall)
-**Decision:** Use 100% recall threshold to catch every defect.  
-**Rationale:** I believe in manufacturing, missing a defect is catastrophic and unacceptable. My observation is that false positives are acceptable since human reviewers can filter them out. I prioritize recall above all else.  
-**Trade-off:** I accept high false positive rate as the necessary cost, but I gain the guarantee of zero false negatives. No defective products slip through.
+**Decision:** Use 100% recall threshold to catch every defect.
+
+**Rationale:** In manufacturing QA, missing a defect is catastrophic. I propose two thresholds based on different use cases:
+
+1. **99th Percentile (Production Default)**: 36.0894
+   - Scores from 99th percentile of training data (normal samples only)
+   - Good starting point for statistical threshold selection
+   - Balances coverage with reasonable false positive rate
+
+2. **100% Recall Threshold (Industry Practice)**: 36.9051
+   - Derived from validation set: lowest score that achieves 100% recall (zero false negatives)
+   - In practice, I would validate this threshold on a larger test set, then choose whichever optimizes business metrics
+   - This is the approach used in manufacturing: collect test images, measure recall at different thresholds, select the one where recall = 100%
+   - Accepts false positives as unavoidable; human reviewers filter them
+
+![Threshold Comparison](assets/threshold_comparison.png)
+
+**Trade-off:** I accept higher false positive rate as the necessary cost to guarantee zero false negatives. No defective products slip through.
 
 ## 8. Approaches That Didn't Work
 
