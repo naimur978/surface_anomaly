@@ -342,11 +342,11 @@ During development, I experimented with several techniques that either didn't im
 
 </div>
 
-The model achieves 99.81% image-level AUROC with DINOv2, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. This means the model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that DINOv2 features capture surface defects very effectively.
+I achieved 99.81% image-level AUROC with DINOv2, exceeding the 98% paper target. This demonstrates strong discrimination between normal and anomalous surfaces. It means my model correctly ranks a randomly selected defective image as more anomalous than a normal image 99.81% of the time. The excellent score separation (normal vs. defective) indicates that DINOv2 features capture surface defects very effectively.
 
-The pixel-level AUROC is lower at 88.98% because the model operates at patch granularity (16×16 grid = 256 patches per image). Upscaling and smoothing patches back to pixel space loses fine-grained localization precision. Additionally, Gaussian filtering blurs defect boundaries for visual quality, and small defects spanning partial patches are harder to localize precisely.
+My pixel-level AUROC is lower at 88.98% because the model operates at patch granularity (16×16 grid = 256 patches per image). When I upscale and smooth patches back to pixel space, I lose fine-grained localization precision. Additionally, I apply Gaussian filtering to blur defect boundaries for visual quality, and small defects spanning partial patches are harder to localize precisely.
 
-The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
+I prioritize 100% recall with my threshold to catch all defects in manufacturing QA.
 
 **Feature Extractor Comparison (Validation AUROC):**
 
