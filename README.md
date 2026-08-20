@@ -236,12 +236,12 @@ Note: subject-based thresholding (separate thresholds per feature type) could be
 
 <div align="center">
 
-| Extractor | Architecture | AUROC | Model Size |
-|-----------|--------------|-------|-----------|
-| DINOv3 | Vision Transformer (ViT-B/16) | 0.9711 | ~350 MB |
-| **DINOv2** | Vision Transformer (ViT-B/14) | **0.9625** | 330 MB |
-| Qwen | Vision Transformer | 0.9388 | 9.6B parameters |
-| EfficientNet-B4 | CNN (EfficientNet) | 0.9487 | 73.6 MB |
+| Extractor | Architecture | AUROC |
+|-----------|--------------|-------|
+| DINOv3 | Vision Transformer (ViT-B/16) | 0.9711 |
+| **DINOv2** | Vision Transformer (ViT-B/14) | **0.9625** |
+| Qwen | Vision Transformer | 0.9388 |
+| EfficientNet-B4 | CNN (EfficientNet) | 0.9487 |
 
 </div>
 
