@@ -316,6 +316,8 @@ During development, I experimented with several techniques that either didn't im
 
 The model achieves 99.81% image-level AUROC, exceeding the 98% paper target, demonstrating strong discrimination between normal and anomalous surfaces. The threshold prioritizes 100% recall to catch all defects in manufacturing QA.
 
+![ROC Curve](assets/roc_curve.png)
+
 ### Inference Performance
 
 | Device | Mean (ms) | Std Dev (ms) | Min (ms) | Max (ms) |
