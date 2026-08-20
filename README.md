@@ -230,7 +230,7 @@ Note: subject-based thresholding (separate thresholds per feature type) could be
 
 **Decision:** Use Vision Transformer-based features (DINOv2 ViT-B/14).
 
-**Rationale:** I evaluated three feature extractors and found Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excels at detecting subtle texture anomalies, critical for surface defects.
+**Rationale:** I evaluated three feature extractors and found Vision Transformers capture fine-grained structural patterns better than CNNs. DINOv2 excels at detecting subtle texture anomalies, critical for surface defects. While EfficientNet-B4 is very lightweight and computationally efficient, in this use case accuracy is more important than lightweight deployment. I prioritized detection performance to ensure no defects slip through in manufacturing QA, so I chose the more powerful Vision Transformer approach despite its higher computational cost.
 
 **Feature Extractor Comparison:**
 
