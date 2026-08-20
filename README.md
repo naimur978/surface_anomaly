@@ -356,7 +356,7 @@ DINOv2 outperformed both alternatives, achieving the highest validation AUROC. T
 
 The ROC curve shows a strong L-shaped pattern, with the curve staying close to the top-left corner. This indicates that I can achieve high true positive rates (recall) while maintaining low false positive rates, which is exactly what I wanted for manufacturing QA where catching all defects is critical.
 
-The anomaly score distribution shows clear separation between normal and defective samples. Normal images cluster with low scores (left side), while defective images cluster with higher scores (right side). This separation validates that my model learned meaningful anomaly signals and makes the threshold selection problem straightforward.
+The anomaly score distribution shows clear separation between normal and defective samples. Normal images cluster with low scores (left side), while defective images cluster with higher scores (right side). The overlap I observe in the middle is explained in the "False Positives Analysis" below—some normal samples fall into higher score ranges due to memory bank gaps (Images 2 & 3), while some test images with actual defects are mislabeled as normal (Images 1 & 4). Overall, the separation validates that my model learned meaningful anomaly signals.
 
 ### Inference Performance
 
