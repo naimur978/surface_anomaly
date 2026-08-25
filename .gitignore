@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyCharm
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Data and Results
+data/
+results/
+*.pkl
+*.pth
+*.pt
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.sublime-project
+.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Models and checkpoints (large files)
+*.pkl
+*.pickle
+checkpoints/
+models/saved_models/
+
+# MLflow experiment tracking
+mlruns/
+.mlflow/

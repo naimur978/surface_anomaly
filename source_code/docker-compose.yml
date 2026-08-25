@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: surface-anomaly-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:///mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlruns/artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri file:///mlruns
+  train:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: surface-anomaly-train
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./config:/app/config
+      - ./mlruns:/app/mlruns
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python scripts/train.py config/config.yaml
+    depends_on:
+      - mlflow
+    # Uncomment for GPU support (requires nvidia-docker)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  inference:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: surface-anomaly-inference
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./config:/app/config
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python scripts/inference.py --model results/models/patchcore_surface.pkl --folder data/surface/test --output ./results/inference_latest --visualize
+    depends_on:
+      - train

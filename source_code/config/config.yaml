@@ -1,0 +1,73 @@
+# ============================================================================
+# ANOMALY DETECTION - CONFIGURATION
+# ============================================================================
+
+# Data Configuration
+data:
+  root_dir: "./data"                    # Path to data directory
+  category: "surface"                   # Product category
+  train_split: "train"                  # Training split name
+  test_split: "test"                    # Test split name
+  img_extensions: [".png", ".jpg", ".jpeg"]
+
+# Image Processing
+image:
+  crop_size: 224                        # Crop size for model input
+  img_size: 256                         # Original image size
+  pad_color: 0                          # Padding color (0 = black, 255 = white)
+  apply_roi_mask: true                  # Apply ROI masking (mask.png) to hide non-ROI regions
+  normalization: "imagenet"             # Normalization scheme
+
+# Model Configuration
+model:
+  # Feature extraction backbone: "dinov2_vitb14" or "efficientnet_b4"
+  # Note: Each backbone has its own trained model saved separately
+  # DINOv2: 16x16 patches (256 per image), 768-dim features
+  # EfficientNet: 28x28 patches (784 per image), 2224-dim features
+  feature_extractor: "dinov2_vitb14"
+  coreset_ratio: 0.15                   # Coreset sampling ratio
+  n_neighbors: 9                        # Number of neighbors for KNN
+  device: "mps"                        # Device: cuda, mps (MacBook), or cpu
+
+# Training Configuration
+training:
+  batch_size: 32
+  num_workers: 0
+  pin_memory: false
+  seed: 42
+
+# Evaluation Configuration
+evaluation:
+  threshold_percentile: 99              # Percentile for threshold
+  target_recall: 1.0                    # Target recall for threshold
+  heatmap_smoothing: 4                  # Gaussian smoothing sigma
+
+# Inference Configuration
+inference:
+  warmup_samples: 5
+  benchmark_samples: 10
+  save_heatmaps: true
+  save_predictions: true
+
+# Output Configuration
+output:
+  results_dir: "./results"              # Main results directory
+  figures_dir: "./results/figures"      # Figures and visualizations
+  models_dir: "./results/models"        # Trained models
+  predictions_dir: "./results/predictions"  # Predictions data
+  logs_dir: "./results/logs"            # Log files
+
+# Figure Configuration
+figures:
+  dpi: 150
+  figsize_single: [10, 5]
+  figsize_dual: [13, 5]
+  figsize_multi: [9, 3]
+  style: "default"
+  save_format: "png"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./results/logs/surface_anomaly.log"
