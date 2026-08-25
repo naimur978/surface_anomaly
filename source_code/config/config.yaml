@@ -13,7 +13,6 @@ data:
 # Image Processing
 image:
   crop_size: 224                        # Crop size for model input
-  img_size: 256                         # Original image size
   pad_color: 0                          # Padding color (0 = black, 255 = white)
   apply_roi_mask: true                  # Apply ROI masking (mask.png) to hide non-ROI regions
   normalization: "imagenet"             # Normalization scheme
@@ -40,7 +39,7 @@ training:
 evaluation:
   threshold_percentile: 99              # Percentile for threshold
   target_recall: 1.0                    # Target recall for threshold
-  heatmap_smoothing: 4                  # Gaussian smoothing sigma
+  heatmap_smoothing: 1                  # Gaussian smoothing sigma
 
 # Inference Configuration
 inference:

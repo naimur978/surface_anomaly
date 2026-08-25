@@ -28,7 +28,7 @@ class FeatureExtractor(nn.Module):
         self.logger = logger
         self.model_name = model_name
 
-        if model_name == 'dinov2_vitb14':
+        if model_name.startswith('dinov2_'):
             self._init_dinov2(device, model_name, logger)
         elif model_name == 'efficientnet_b4':
             self._init_efficientnet(device, logger)
@@ -127,11 +127,13 @@ class PatchCore:
     """PatchCore anomaly detection with memory bank and k-NN scoring."""
 
     def __init__(self, coreset_ratio: float = 0.15, n_neighbors: int = 9,
-                 device: str = 'cuda', logger: Optional[logging.Logger] = None) -> None:
+                 device: str = 'cuda', logger: Optional[logging.Logger] = None,
+                 heatmap_smoothing: float = 4.0) -> None:
         self.coreset_ratio = coreset_ratio
         self.n_neighbors = n_neighbors
         self.device = device
         self.logger = logger
+        self.heatmap_smoothing = heatmap_smoothing
         self.memory_bank: Optional[torch.Tensor] = None
         self.hw_shape: Optional[Tuple[int, int]] = None
 
@@ -185,4 +187,4 @@ class PatchCore:
         # Resize using scipy zoom
         zoom_factors = (224 / H, 224 / W)
         scores_up = ndimage.zoom(scores, zoom_factors, order=1)
-        return gaussian_filter(scores_up, sigma=4)
+        return gaussian_filter(scores_up, sigma=self.heatmap_smoothing)

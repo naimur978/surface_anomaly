@@ -96,7 +96,8 @@ def train_patchcore(
             coreset_ratio=config['model']['coreset_ratio'],
             n_neighbors=config['model'].get('n_neighbors', 9),
             device=device,
-            logger=logger
+            logger=logger,
+            heatmap_smoothing=config['evaluation'].get('heatmap_smoothing', 4.0)
         )
         model.fit(all_train_patches, hw_shape)
 

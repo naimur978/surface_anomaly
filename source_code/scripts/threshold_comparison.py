@@ -10,16 +10,22 @@ figure to --output and per-threshold metrics to <output_dir>/threshold_metrics.j
 
 import sys
 import json
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from sklearn.metrics import ConfusionMatrixDisplay
+from torch.utils.data import DataLoader
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.inference import run_inference
-from config.config import load_config
+from src.config import load_config
+from src.dataset import MVTecDataset
+from src.check_device import get_device
+from src.models import FeatureExtractor
 from src.metrics import compute_confusion_metrics
+from src.training import collect_predictions, compute_image_scores
 
 
 def find_threshold_for_recall(scores, labels, target_recall=1.0):
@@ -37,31 +43,21 @@ def find_threshold_for_recall(scores, labels, target_recall=1.0):
 
 
 def plot_threshold_comparison(test_scores, test_labels, percentile_threshold, recall_threshold, output_path="results/figures/threshold_comparison.png"):
-    """Create side-by-side comparison of thresholds."""
-    normal_scores = test_scores[test_labels == 0]
-    defect_scores = test_scores[test_labels == 1]
+    """Create side-by-side confusion matrix comparison of the two thresholds."""
+    cm_percentile = compute_confusion_metrics(test_labels, test_scores, percentile_threshold)["cm"]
+    cm_recall = compute_confusion_metrics(test_labels, test_scores, recall_threshold)["cm"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.5))
 
     # Left: 99th percentile threshold
-    axes[0].hist(normal_scores, bins=30, alpha=0.7, color="#27AE60", label="Normal", density=True)
-    axes[0].hist(defect_scores, bins=30, alpha=0.7, color="#E74C3C", label="Defective", density=True)
-    axes[0].axvline(percentile_threshold, color="black", lw=2.5, linestyle="--", label=f"99th Percentile = {percentile_threshold:.4f}")
-    axes[0].set_xlabel("Anomaly score", fontsize=11)
-    axes[0].set_ylabel("Density", fontsize=11)
-    axes[0].set_title("99th Percentile Threshold", fontsize=12, fontweight="bold")
-    axes[0].legend(fontsize=10)
-    axes[0].grid(alpha=0.3)
+    disp_percentile = ConfusionMatrixDisplay(cm_percentile, display_labels=["Normal", "Defective"])
+    disp_percentile.plot(cmap="Blues", values_format="d", ax=axes[0], colorbar=True)
+    axes[0].set_title(f"99th Percentile\n(threshold={percentile_threshold:.4f})", fontsize=12, fontweight="bold")
 
     # Right: 100% recall threshold
-    axes[1].hist(normal_scores, bins=30, alpha=0.7, color="#27AE60", label="Normal", density=True)
-    axes[1].hist(defect_scores, bins=30, alpha=0.7, color="#E74C3C", label="Defective", density=True)
-    axes[1].axvline(recall_threshold, color="black", lw=2.5, linestyle="--", label=f"100% Recall = {recall_threshold:.4f}")
-    axes[1].set_xlabel("Anomaly score", fontsize=11)
-    axes[1].set_ylabel("Density", fontsize=11)
-    axes[1].set_title("100% Recall Threshold", fontsize=12, fontweight="bold")
-    axes[1].legend(fontsize=10)
-    axes[1].grid(alpha=0.3)
+    disp_recall = ConfusionMatrixDisplay(cm_recall, display_labels=["Normal", "Defective"])
+    disp_recall.plot(cmap="Greens", values_format="d", ax=axes[1], colorbar=True)
+    axes[1].set_title(f"100% Recall\n(threshold={recall_threshold:.4f})", fontsize=12, fontweight="bold")
 
     plt.tight_layout()
 
@@ -97,6 +93,24 @@ def print_metrics(metrics, label_width=12):
         print(f"  {key:<{label_width}s}: {formatted}")
 
 
+def load_trained_model(config, device):
+    """Load the trained PatchCore model matching the current config."""
+    feature_extractor = config['model']['feature_extractor']
+    models_dir = Path(config['output']['models_dir'])
+    model_path = models_dir / f"anomaly_localization_{config['data']['category']}_{feature_extractor}.pkl"
+
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"No trained model found at {model_path}. Run scripts/train.py first."
+        )
+
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+
+    extractor = FeatureExtractor(device=device, model_name=feature_extractor)
+    return model, extractor
+
+
 def main():
     """Main execution."""
     import argparse
@@ -108,14 +122,37 @@ def main():
 
     # Load config
     config = load_config(args.config)
+    device = get_device()
+
+    # Load trained model + feature extractor
+    print("Loading trained model...")
+    model, extractor = load_trained_model(config, device)
+
+    # Build data loaders
+    train_dataset = MVTecDataset(
+        config['data']['root_dir'], config['data']['category'], split='train',
+        crop_size=config['image']['crop_size'],
+        apply_roi_mask=config['image'].get('apply_roi_mask', False)
+    )
+    test_dataset = MVTecDataset(
+        config['data']['root_dir'], config['data']['category'], split='test',
+        crop_size=config['image']['crop_size'],
+        apply_roi_mask=config['image'].get('apply_roi_mask', False)
+    )
+    train_loader = DataLoader(train_dataset, batch_size=config['training']['batch_size'], shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'], shuffle=False)
 
     # Run inference to get scores
     print("Running inference on test set...")
-    test_scores, test_labels, test_paths, score_maps, masks = run_inference(config)
+    test_scores, test_labels, test_paths, score_maps, masks = collect_predictions(test_loader, extractor, model)
 
-    # Compute thresholds
-    percentile_99_threshold = np.percentile(test_scores, 99)
-    recall_100_threshold = find_threshold_for_recall(test_scores, test_labels, target_recall=1.0)
+    # Compute thresholds (99th percentile is computed on normal training scores,
+    # matching the convention used in src/training.py's evaluate_model)
+    train_scores = np.array(compute_image_scores(train_loader, extractor, model))
+    percentile_99_threshold = np.percentile(train_scores, config['evaluation'].get('threshold_percentile', 99))
+    recall_100_threshold = find_threshold_for_recall(
+        test_scores, test_labels, target_recall=config['evaluation'].get('target_recall', 1.0)
+    )
 
     print(f"\n{'='*60}")
     print("THRESHOLD COMPARISON")
